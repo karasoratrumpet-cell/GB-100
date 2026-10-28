@@ -1,0 +1,3924 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>GB-100 ver0.93 | Harmony &amp; Rhythm Hardware Trainer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* =====================================================================
+       UNIFIED INDUSTRIAL HARDWARE DESIGN SYSTEM (Phone & Tablet Cohesive)
+       - Warm Anodized Graphite Chassis (#171715 / #20201d)
+       - Matte Warm Stone Controls (#30302b / #3b3b35)
+       - High-Contrast Bone White Legends (#f5f4f0)
+       - Soft Warm Coral-Red Accent (#de5d4e) — Gentle on the eyes, never harsh
+       - Distinct Chord Note Highlight (#3898ec) on Keyboard for non-root notes
+       ===================================================================== */
+    :root {
+      --chassis-bg: #171715;
+      --panel-bg: #20201d;
+      --module-bg: #282824;
+      --keycap-bg: #32322d;
+      --keycap-hover: #3d3d37;
+      --grid-line: #383832;
+      --ink-primary: #f5f4f0;
+      --ink-secondary: #c7c5bc;
+      --ink-muted: #8e8c82;
+      --accent: #de5d4e;          /* Soft Warm Red */
+      --accent-border: #eb7c6f;
+      --accent-shadow: #9e382c;
+      --accent-ink: #ffffff;
+      --chord-note: #3898ec;      /* Clear Sky-Blue for non-root pressed keys */
+      --chord-note-dark: #1e6ec7;
+      --fader-gray: #686860;      /* Medium-light gray for faders so white text stays crisp */
+      --lcd-contrast: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--chassis-bg);
+      color: var(--ink-primary);
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+
+    input, select, textarea { -webkit-user-select: text; user-select: text; }
+
+    /* Forced Landscape Wrapper: Rotates 90deg automatically when device is held vertically */
+    #appLandscapeRoot {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background: var(--chassis-bg);
+      touch-action: none;
+    }
+
+    @media (orientation: portrait) {
+      #appLandscapeRoot {
+        width: 100vh;
+        width: 100dvh;
+        height: 100vw;
+        top: 0;
+        left: 100vw;
+        transform-origin: top left;
+        transform: rotate(90deg);
+      }
+    }
+
+    /* Offline-resilient layout classes */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .inline-flex { display: inline-flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .flex-1 { flex: 1 1 0%; }
+    .shrink-0 { flex-shrink: 0; }
+    .items-center { align-items: center; }
+    .items-baseline { align-items: baseline; }
+    .items-stretch { align-items: stretch; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .justify-end { justify-content: flex-end; }
+    .grid { display: grid; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .min-h-0 { min-height: 0; }
+    .min-w-0 { min-width: 0; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .whitespace-nowrap { white-space: nowrap; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Hardware Grid & Modules */
+    .hw-bar {
+      background: #1c1c19;
+      border-bottom: 1px solid var(--grid-line);
+    }
+    .hw-module {
+      background: var(--panel-bg);
+      border: 1px solid var(--grid-line);
+      border-radius: 6px;
+    }
+    .hw-readout {
+      background: #121210;
+      border: 1px solid #30302b;
+      border-radius: 5px;
+    }
+
+    /* Tactile Matte Hardware Buttons */
+    .hw-btn {
+      background: var(--keycap-bg);
+      color: var(--ink-primary);
+      border: 1px solid #474740;
+      border-bottom: 2px solid #141412;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.15;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: background 0.06s ease, transform 0.05s ease;
+      touch-action: manipulation;
+    }
+    .hw-btn:hover {
+      background: var(--keycap-hover);
+    }
+    .hw-btn:active {
+      transform: translateY(1px);
+      border-bottom-width: 1px;
+    }
+    /* Soft Warm Red Accent for Active State */
+    .hw-btn.is-active {
+      background: var(--accent) !important;
+      color: var(--accent-ink) !important;
+      border-color: var(--accent-border) !important;
+      border-bottom-color: var(--accent-shadow) !important;
+    }
+    .hw-btn-ghost {
+      background: #262622;
+      color: var(--ink-secondary);
+      border: 1px solid #3a3a34;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+    .hw-btn-ghost.is-active {
+      background: var(--accent) !important;
+      color: #ffffff !important;
+      border-color: var(--accent-border) !important;
+    }
+
+    /* Selects & Inputs */
+    .hw-select {
+      background: #141412;
+      color: var(--ink-primary);
+      border: 1px solid #474740;
+      border-radius: 5px;
+      font-family: 'JetBrains Mono', 'Noto Sans JP', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 8px;
+      outline: none;
+    }
+    .hw-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Industrial Range Sliders */
+    input[type="range"].hw-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #121210;
+      border: 1px solid #3a3a34;
+      height: 8px;
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type="range"].hw-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 18px;
+      border-radius: 3px;
+      background: #e6e4dc;
+      border: 1px solid #121210;
+      cursor: pointer;
+    }
+    input[type="range"].hw-slider.accent-thumb::-webkit-slider-thumb {
+      background: var(--accent);
+      border-color: #ffffff;
+    }
+
+    /* Vertical Mixer Fader Track (Light-medium gray fill so white text is always readable!) */
+    .fader-channel {
+      background: #181815;
+      border: 1px solid #30302b;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: stretch;
+      padding: 4px;
+    }
+    .fader-track-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 44px;
+      background: #0e0e0c;
+      border: 1px solid #2b2b26;
+      border-radius: 3px;
+      margin: 4px 0;
+      overflow: hidden;
+      cursor: ns-resize;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      touch-action: none;
+    }
+    /* Quarter ~ Triplet fill: Medium-Light Gray (#686860) so white labels never clash */
+    .fader-fill {
+      width: 100%;
+      background: var(--fader-gray);
+      border-top: 2px solid #8e8e85;
+      transition: height 0.06s ease;
+      pointer-events: none;
+    }
+    /* Accent channel fill: Soft Warm Red */
+    .fader-fill.is-accent-ch {
+      background: #b84a3c;
+      border-top: 2px solid var(--accent-border);
+    }
+    .fader-overlay-info {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      pointer-events: none;
+      z-index: 2;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9);
+    }
+
+    /* =====================================================================
+       PIANO KEYBOARD STAGE (Clear Visual Distinction for ALL Pressed Keys!)
+       - Root Key (.pressed.is-root): Soft Warm Red (#de5d4e)
+       - Other Pressed Keys (.pressed:not(.is-root)): Vivid Sky-Blue (#3898ec)
+       ===================================================================== */
+    .keyboard-viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0d0d0b;
+      border-top: 2px solid #30302b;
+      touch-action: none;
+    }
+    .keyboard-stage {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      height: 100%;
+      touch-action: none;
+      will-change: transform;
+      transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .piano-key-white {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      overflow: hidden;
+      background: linear-gradient(180deg, #faf9f5 0%, #efede6 90%, #dcd9ce 100%);
+      border-right: 1px solid #9c998e;
+      border-bottom: 6px solid #b5b2a6;
+      border-radius: 0 0 5px 5px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 8px;
+      cursor: pointer;
+      touch-action: none;
+      transition: background 0.04s ease;
+    }
+    .piano-key-white * {
+      pointer-events: none !important;
+    }
+    .key-badge-stack {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+    .piano-key-black .key-badge-stack {
+      bottom: 20px;
+    }
+    #lcdNotesList {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #lcdNotesList::-webkit-scrollbar {
+      display: none;
+    }
+    /* Non-Root Pressed White Key: Distinct Sky-Blue Highlight with ZERO geometry/label shift */
+    .piano-key-white.pressed {
+      background: linear-gradient(180deg, #cbe7ff 0%, #63b3ed 45%, #3898ec 100%);
+      border-bottom-width: 6px;
+      border-bottom-color: #1e6ec7;
+      transform: none;
+      box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.28);
+    }
+    .piano-key-white.pressed .key-note-label {
+      color: #ffffff !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .piano-key-white.pressed .key-role-pill {
+      display: inline-block !important;
+      background: rgba(15, 23, 42, 0.75);
+      color: #e0f2fe;
+    }
+    /* Root Pressed White Key: Soft Warm Coral-Red with ZERO geometry/label shift */
+    .piano-key-white.pressed.is-root {
+      background: linear-gradient(180deg, #f7b6ae 0%, #e67365 45%, var(--accent) 100%);
+      border-bottom-width: 6px;
+      border-bottom-color: var(--accent-shadow);
+      transform: none;
+      box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.28);
+    }
+    .piano-key-white.pressed.is-root .key-note-label {
+      color: #ffffff !important;
+    }
+    .piano-key-white.pressed.is-root .key-role-pill {
+      display: inline-block !important;
+      background: #ffffff;
+      color: #9e382c;
+    }
+
+    .piano-key-black {
+      position: absolute;
+      top: 0;
+      height: 58%;
+      overflow: hidden;
+      background: linear-gradient(180deg, #2b2b27 0%, #1c1c19 88%, #11110f 100%);
+      border: 1px solid #090908;
+      border-bottom: 6px solid #363630;
+      border-radius: 0 0 4px 4px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 6px;
+      cursor: pointer;
+      touch-action: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.55);
+      transition: background 0.04s ease;
+    }
+    .piano-key-black * {
+      pointer-events: none !important;
+    }
+    /* Non-Root Pressed Black Key: Vivid Sky-Blue Highlight with ZERO geometry/label shift */
+    .piano-key-black.pressed {
+      background: linear-gradient(180deg, #63b3ed 0%, #3898ec 65%, #1e6ec7 100%);
+      border-bottom-width: 6px;
+      border-bottom-color: #154c8a;
+      transform: none;
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.35);
+    }
+    .piano-key-black.pressed .key-note-label {
+      color: #ffffff !important;
+    }
+    .piano-key-black.pressed .key-role-pill {
+      display: inline-block !important;
+      background: rgba(15, 23, 42, 0.8);
+      color: #bae6fd;
+    }
+    /* Root Pressed Black Key: Soft Warm Coral-Red with ZERO geometry/label shift */
+    .piano-key-black.pressed.is-root {
+      background: linear-gradient(180deg, #eb7c6f 0%, var(--accent) 65%, var(--accent-shadow) 100%);
+      border-bottom-width: 6px;
+      border-bottom-color: #6e2219;
+      transform: none;
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.35);
+    }
+    .piano-key-black.pressed.is-root .key-note-label {
+      color: #ffffff !important;
+    }
+    .piano-key-black.pressed.is-root .key-role-pill {
+      display: inline-block !important;
+      background: #ffffff;
+      color: #9e382c;
+    }
+
+    /* =====================================================================
+       UNIFIED THEME ACROSS SMARTPHONE & TABLET
+       - body.is-phone (Harmony Tab): Upper Deck 38%, Keyboard 62%
+       - body.is-phone.phone-metro-full (Metronome Tab): Hides Keyboard so
+         Metronome uses 100% of the workspace height and displays 4分~3連符 clearly!
+       - body.is-tablet: Shows Harmony & Metronome side-by-side + Keyboard 54%
+       ===================================================================== */
+    body.is-phone #brandTitleBlock {
+      display: none !important;
+    }
+    body.is-phone #phoneTabSwitcher {
+      display: flex !important;
+    }
+    body.is-phone #upperControlDeck {
+      height: 38% !important;
+      min-height: 38% !important;
+      max-height: 38% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      padding: 4px 6px !important;
+    }
+    body.is-phone #lowerKeyboardDeck {
+      height: 62% !important;
+      min-height: 62% !important;
+      max-height: 62% !important;
+    }
+    /* When Smartphone switches to Metronome tab, hide keyboard & give Metronome full screen height! */
+    body.is-phone.phone-metro-full #upperControlDeck {
+      height: 100% !important;
+      min-height: 100% !important;
+      max-height: 100% !important;
+      flex: 1 1 0% !important;
+      padding: 6px 8px !important;
+    }
+    body.is-phone.phone-metro-full #lowerKeyboardDeck {
+      display: none !important;
+    }
+    body.is-phone #tabletInlineQuickRow {
+      display: none !important;
+    }
+
+    body.is-tablet #brandTitleBlock {
+      display: flex !important;
+    }
+    body.is-tablet #phoneTabSwitcher {
+      display: none !important;
+    }
+    body.is-tablet #upperControlDeck {
+      height: 46% !important;
+      min-height: 46% !important;
+      max-height: 46% !important;
+      display: grid !important;
+      grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+      grid-template-rows: minmax(0, 1fr) !important;
+      gap: 8px !important;
+      padding: 8px 10px !important;
+    }
+    body.is-tablet #harmonyPane {
+      display: flex !important;
+      grid-column: span 7 / span 7 !important;
+      overflow: hidden !important;
+    }
+    body.is-tablet #metroPane {
+      display: flex !important;
+      grid-column: span 5 / span 5 !important;
+      overflow: hidden !important;
+    }
+    body.is-tablet #lowerKeyboardDeck {
+      height: 54% !important;
+      min-height: 54% !important;
+      max-height: 54% !important;
+      display: flex !important;
+    }
+    /* Larger Metronome Buttons on Tablet & Smartphone Full-Screen Metronome */
+    body.is-tablet .metro-transport-btn,
+    body.is-phone.phone-metro-full .metro-transport-btn {
+      min-height: 44px !important;
+      font-size: 16px !important;
+    }
+    body.is-tablet .metro-step-btn,
+    body.is-phone.phone-metro-full .metro-step-btn {
+      min-height: 38px !important;
+      min-width: 44px !important;
+      font-size: 15px !important;
+    }
+    body.is-tablet .fader-step-btn,
+    body.is-phone.phone-metro-full .fader-step-btn {
+      padding-top: 7px !important;
+      padding-bottom: 7px !important;
+      font-size: 15px !important;
+    }
+  </style>
+</head>
+<body class="is-tablet">
+
+  <!-- ALL CONTENT WRAPPED IN #appLandscapeRoot (Auto-rotates to landscape on portrait screens) -->
+  <div id="appLandscapeRoot">
+
+    <!-- ===================================================================
+         1. UNIFIED TOP HARDWARE BAR (Shared design on both Smartphone & Tablet)
+         =================================================================== -->
+    <header id="unifiedTopHeader" class="hw-bar shrink-0 px-2.5 py-1 h-[38px] min-h-[38px] max-h-[38px] overflow-hidden flex items-center justify-between gap-2">
+      <!-- LeftA (Tablet/PC): Power & GB-100 ver0.93 Badge -->
+      <div id="brandTitleBlock" class="flex items-center gap-2">
+        <button id="btnPower" type="button" class="w-7 h-7 rounded-sm bg-[#282824] border border-[#474740] flex items-center justify-center" title="電源 ON/OFF">
+          <span id="powerDot" class="w-2.5 h-2.5 rounded-full bg-[#de5d4e]"></span>
+        </button>
+        <div class="flex items-baseline gap-1.5">
+          <span class="font-black tracking-tight text-base text-[#f5f4f0]">GB-100</span>
+          <span id="appVersionBadge" class="bg-[#282824] text-[#c7c5bc] border border-[#3d3d37] font-mono text-xs font-bold px-1.5 py-0.5 rounded-sm">ver0.93</span>
+        </div>
+      </div>
+
+      <!-- LeftB (Smartphone): Concise Symbol Tab Switcher [🎹] [▷/□] -->
+      <div id="phoneTabSwitcher" class="hidden items-center gap-1.5">
+        <button type="button" data-phone-tab="harmony" class="phone-tab-btn hw-btn is-active px-3.5 py-1 text-sm font-black" title="ハーモニーモード">
+          🎹
+        </button>
+        <button type="button" data-phone-tab="metro" id="btnPhoneTabMetro" class="phone-tab-btn hw-btn px-3.5 py-1 text-sm font-black" title="メトロノーム設定画面">
+          ▷/□
+        </button>
+      </div>
+
+      <!-- Center: Unified Live Status Readout Pill -->
+      <div class="flex items-center gap-2 bg-[#121210] px-2.5 py-1 rounded-sm border border-[#30302b] font-mono text-xs">
+        <span id="headerChordBadge" class="font-black text-[#de5d4e] whitespace-nowrap leading-none">---</span>
+        <span class="text-[#474740]">|</span>
+        <span id="headerToneBadge" class="text-[#f5f4f0] font-bold truncate max-w-[95px] sm:max-w-[140px]">CLARINET</span>
+        <span class="text-[#474740]">|</span>
+        <span id="headerPitchBadge" class="text-[#c7c5bc] hidden sm:inline">442.0Hz</span>
+        <span class="text-[#474740] hidden sm:inline">|</span>
+        <span id="headerBpmBadge" class="text-[#c7c5bc] font-bold">♩120</span>
+      </div>
+
+      <!-- Right: Unified Dual Volumes (🎹 / ⏱) & Symbol-Only Settings Button (⚙) -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <div class="flex items-center gap-1.5 bg-[#141412] px-2 py-1 rounded-sm border border-[#33332e]">
+          <button id="btnMuteHarmony" type="button" class="text-xs font-bold text-[#f5f4f0] hover:text-[#de5d4e]" title="ハーモニー消音">🎹</button>
+          <input id="sliderHarmonyVol" type="range" min="0" max="100" value="80" class="hw-slider w-14 sm:w-24" aria-label="ハーモニー音量" />
+          <span id="labelHarmonyVol" class="font-mono text-xs font-bold w-8 text-right text-[#f5f4f0] hidden sm:inline">80%</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-[#141412] px-2 py-1 rounded-sm border border-[#33332e]">
+          <button id="btnMuteMetro" type="button" class="text-xs font-bold text-[#f5f4f0] hover:text-[#de5d4e]" title="メトロノーム消音">⏱</button>
+          <input id="sliderMetroVol" type="range" min="0" max="10" step="1" value="8" class="hw-slider w-12 sm:w-20" aria-label="メトロノーム音量" />
+          <span id="labelMetroVol" class="font-mono text-xs font-bold w-5 text-right text-[#f5f4f0] hidden sm:inline">8</span>
+        </div>
+        <button id="btnOpenSettings" type="button" class="hw-btn px-3 py-1 text-sm font-black" title="設定">
+          ⚙
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================================================================
+         2. MAIN PERFORMANCE WORKSPACE (Upper Deck + Lower Keyboard)
+         Hidden completely when Settings View is open
+         =================================================================== -->
+    <main id="mainPerformanceView" class="flex-1 min-h-0 w-full flex flex-col justify-between overflow-hidden">
+
+      <!-- UPPER CONTROL DECK -->
+      <section id="upperControlDeck" class="w-full shrink-0 overflow-hidden">
+
+        <!-- ===============================================================
+             PANE A: HARMONY & INSTRUMENT DECK
+             - Replaced 主音:Auto / 調律:Auto with inline Metronome Play/Stop (▷ / □)!
+             =============================================================== -->
+        <div id="harmonyPane" class="hw-module p-2 sm:p-2.5 flex flex-col justify-between gap-1.5 sm:gap-2 min-h-0 h-full">
+
+          <!-- Top Hero Readout: Detected Chord/Root + Active Tone + Pitch/Transpose -->
+          <div class="hw-readout p-2 sm:p-2.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2 h-[30px] sm:h-[38px] min-h-[30px] sm:min-h-[38px] max-h-[30px] sm:max-h-[38px] overflow-hidden">
+              <!-- Protagonist 1: Detected Chord & Root -->
+              <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 overflow-hidden whitespace-nowrap">
+                <span id="lcdChordName" class="font-mono text-2xl sm:text-3xl font-black tracking-tight text-[#f5f4f0] leading-none whitespace-nowrap">---</span>
+                <span id="lcdRootInfo" class="font-mono text-xs sm:text-sm font-bold text-[#de5d4e] whitespace-nowrap leading-none">主音: C (自動)</span>
+                <span id="lcdTempBadge" class="bg-[#282824] text-[#f5f4f0] border border-[#474740] px-2 py-0.5 rounded-sm font-mono text-xs font-bold whitespace-nowrap leading-none">平均律 EQUAL</span>
+              </div>
+
+              <!-- Protagonist 2: Current Instrument Tone & Tuning Status -->
+              <div class="flex items-center gap-1.5 shrink-0 font-mono whitespace-nowrap">
+                <span id="lcdToneName" class="bg-[#282824] text-[#f5f4f0] border border-[#474740] px-2 py-0.5 rounded-sm text-xs sm:text-sm font-extrabold whitespace-nowrap">001: CLARINET</span>
+                <span id="lcdPitchDisplay" class="bg-[#20201d] text-[#c7c5bc] border border-[#383832] px-2 py-0.5 rounded-sm text-xs sm:text-sm font-bold whitespace-nowrap">442.0Hz</span>
+                <span id="lcdTransposeBadge" class="bg-[#20201d] text-[#c7c5bc] border border-[#383832] px-2 py-0.5 rounded-sm text-xs sm:text-sm font-bold whitespace-nowrap">移調:C</span>
+                <span id="lcdOctaveBadge" class="hidden sm:inline-block bg-[#20201d] text-[#8e8c82] border border-[#383832] px-1.5 py-0.5 rounded-sm text-xs whitespace-nowrap">Oct:+0</span>
+                <span id="lcdHoldIcon" class="hidden bg-[#de5d4e] text-white px-2 py-0.5 rounded-sm text-xs font-extrabold whitespace-nowrap">持続</span>
+              </div>
+            </div>
+
+            <!-- Live Harmonic Cent & Hz Readout Strip -->
+            <div class="border-t border-[#262622] pt-1.5 mt-1 flex items-center justify-between gap-2 h-[28px] min-h-[28px] max-h-[28px] overflow-hidden">
+              <div id="lcdNotesList" class="flex items-center gap-1.5 overflow-x-auto overflow-y-hidden whitespace-nowrap font-mono text-xs font-bold h-[22px] min-h-[22px] max-h-[22px]">
+                <span class="inline-block py-0.5 text-xs leading-none text-[#8e8c82]">鍵盤を押すと主音(赤)・構成音(青)の周波数(Hz)と純正律セント補正値(c)を表示</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tablet Inline Quick Row: Tone / Transpose / Pitch right on the Tablet Panel -->
+          <div id="tabletInlineQuickRow" class="grid grid-cols-12 gap-2 items-center shrink-0">
+            <!-- Quick Tone Category Selector (6 buttons) -->
+            <div class="col-span-6 grid grid-cols-6 gap-1">
+              <button type="button" data-tone-cat="ORGAN" class="tone-cat-btn hw-btn py-2 text-xs">オルガン</button>
+              <button type="button" data-tone-cat="WOODWIND" class="tone-cat-btn hw-btn is-active py-2 text-xs">木管</button>
+              <button type="button" data-tone-cat="BRASS" class="tone-cat-btn hw-btn py-2 text-xs">金管</button>
+              <button type="button" data-tone-cat="CHOIR" class="tone-cat-btn hw-btn py-2 text-xs">コーラス</button>
+              <button type="button" data-tone-cat="SYNTH" class="tone-cat-btn hw-btn py-2 text-xs">シンセ</button>
+              <button type="button" data-tone-cat="PIANO_GM" class="tone-cat-btn hw-btn py-2 text-xs">ピアノ他</button>
+            </div>
+            <!-- Quick Transpose (C / Bb / Eb / F: F Horn is -7 semitones = Perfect 5th below) -->
+            <div class="col-span-4 grid grid-cols-4 gap-1">
+              <button type="button" data-transpose="0" class="transpose-preset-btn hw-btn is-active py-2 text-xs" title="C管 (実音)">C</button>
+              <button type="button" data-transpose="-2" class="transpose-preset-btn hw-btn py-2 text-xs" title="B♭管 (長2度下 -2)">B♭</button>
+              <button type="button" data-transpose="3" class="transpose-preset-btn hw-btn py-2 text-xs" title="E♭管 (短3度上 +3)">E♭</button>
+              <button type="button" data-transpose="-7" class="transpose-preset-btn hw-btn py-2 text-xs" title="F管 (完全5度下 -7)">F</button>
+            </div>
+            <!-- Quick Pitch 440 / 442 -->
+            <div class="col-span-2 grid grid-cols-2 gap-1">
+              <button type="button" data-pitch-hz="440.0" class="pitch-quick-btn hw-btn py-2 text-xs font-mono">440</button>
+              <button type="button" data-pitch-hz="442.0" class="pitch-quick-btn hw-btn is-active py-2 text-xs font-mono">442</button>
+            </div>
+          </div>
+
+          <!-- Primary Harmony Action Switches + Inline Metronome Play/Stop (Replacing 主音:Auto / 調律:Auto!) -->
+          <div class="grid grid-cols-12 gap-1.5 items-center shrink-0">
+            <div class="col-span-7 grid grid-cols-3 gap-1.5">
+              <button id="btnTempEqual" type="button" class="hw-btn is-active py-2 sm:py-2.5 text-xs sm:text-sm font-extrabold">平均律</button>
+              <button id="btnTempJust" type="button" class="hw-btn py-2 sm:py-2.5 text-xs sm:text-sm font-extrabold">純正律</button>
+              <button id="btnHold" type="button" class="hw-btn py-2 sm:py-2.5 text-xs sm:text-sm font-extrabold">持続</button>
+            </div>
+            <!-- Space where 主音:Auto / 調律:Auto used to be -> Now Metronome Play/Stop (▷ / □) + All Notes Off -->
+            <div class="col-span-5 flex items-center gap-1.5">
+              <button id="btnHarmonyMetroToggle" type="button" class="hw-btn flex-1 py-2 sm:py-2.5 text-sm sm:text-base font-black gap-2" title="メトロノーム再生/停止">
+                <span id="harmonyMetroIcon">▷</span>
+                <span id="harmonyMetroBpm" class="font-mono text-xs sm:text-sm text-[#c7c5bc]">♩120</span>
+              </button>
+              <button id="btnAllNotesOff" type="button" class="hw-btn px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-extrabold" title="ハーモニー全音停止">■</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===============================================================
+             PANE B: METRONOME & VERTICAL FADER MIXER
+             - On Smartphone, switching to Metronome hides the keyboard so
+               強拍 and ♩4分〜3連符 faders use the full screen height!
+             =============================================================== -->
+        <div id="metroPane" class="hw-module p-2 sm:p-3 flex flex-col justify-between gap-2 min-h-0 h-full">
+
+          <!-- Top Metronome Transport & Large BPM Readout -->
+          <div class="grid grid-cols-12 gap-1.5 sm:gap-2 items-stretch shrink-0">
+            <!-- Play/Stop Button: Dynamically displays ▷ when stopped, □ when playing -->
+            <button id="btnMetroToggle" type="button" class="metro-transport-btn col-span-3 hw-btn py-2 text-base sm:text-xl font-black" title="メトロノーム再生/停止">
+              ▷
+            </button>
+
+            <!-- Large BPM Numeric Display + Beat LEDs -->
+            <div class="col-span-4 hw-readout px-2.5 py-1.5 flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span id="lcdBeatSig" class="font-mono text-xs sm:text-sm font-extrabold text-[#de5d4e]">4/4</span>
+                  <span id="lcdMetroState" class="font-mono text-[10px] text-[#8e8c82]">STOP</span>
+                </div>
+                <div id="lcdBeatDots" class="flex items-center gap-1 mt-1">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#383832]"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#383832]"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#383832]"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#383832]"></span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] font-mono text-[#8e8c82] block leading-none">TEMPO</span>
+                <span id="lcdTempoVal" class="font-mono text-2xl sm:text-3xl font-black text-[#f5f4f0] leading-none">120</span>
+              </div>
+            </div>
+
+            <!-- Dedicated Large TAP Button & Time Signature Selector -->
+            <button id="btnTapTempo" type="button" class="metro-transport-btn col-span-2 hw-btn py-2 text-xs sm:text-sm font-black">
+              TAP
+            </button>
+            <div class="col-span-3 hw-readout px-2 py-1 flex flex-col justify-center items-center">
+              <span class="text-[10px] text-[#8e8c82] font-bold leading-none mb-0.5">拍子</span>
+              <div class="flex items-center font-mono text-xs sm:text-base font-extrabold text-[#f5f4f0]">
+                <select id="selectBeatNum" class="bg-transparent text-[#f5f4f0] font-extrabold focus:outline-none cursor-pointer" aria-label="拍子の分子"></select>
+                <span class="mx-0.5">/</span>
+                <select id="selectBeatDen" class="bg-transparent text-[#f5f4f0] font-extrabold focus:outline-none cursor-pointer" aria-label="拍子の分母">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="4" selected>4</option>
+                  <option value="8">8</option>
+                  <option value="16">16</option>
+                  <option value="32">32</option>
+                  <option value="64">64</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tempo Scrub Bar & Stepper Row -->
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button id="btnTempoMinus5" type="button" class="metro-step-btn hw-btn px-2.5 py-1.5 text-xs sm:text-sm font-mono font-black">-5</button>
+            <button id="btnTempoSlower" type="button" class="metro-step-btn hw-btn px-3 py-1.5 text-sm sm:text-base font-mono font-black" title="遅く">-</button>
+            <input id="sliderTempo" type="range" min="5" max="300" value="120" class="hw-slider accent-thumb flex-1" aria-label="テンポ設定" />
+            <button id="btnTempoFaster" type="button" class="metro-step-btn hw-btn px-3 py-1.5 text-sm sm:text-base font-mono font-black" title="速く">+</button>
+            <button id="btnTempoPlus5" type="button" class="metro-step-btn hw-btn px-2.5 py-1.5 text-xs sm:text-sm font-mono font-black">+5</button>
+          </div>
+
+          <!-- 5-Channel Vertical Fader Mixer (Tall, clear labels for 強拍 & ♩4分〜3連符) -->
+          <div class="grid grid-cols-5 gap-1.5 sm:gap-2 flex-1 min-h-0 items-stretch">
+            <!-- Channel 1: Accent -->
+            <div class="fader-channel">
+              <button type="button" data-sub-up="accent" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">+</button>
+              <div data-fader-ch="accent" data-sub-toggle="accent" class="fader-track-wrap" title="上下ドラッグまたはタップで強拍音量調整">
+                <div id="barSubAccent" class="fader-fill is-accent-ch" style="height: 100%"></div>
+                <div class="fader-overlay-info">
+                  <span class="text-xs sm:text-sm font-black text-white">強拍</span>
+                  <span id="valSubAccent" class="font-mono text-xs sm:text-base font-extrabold text-white">10</span>
+                </div>
+              </div>
+              <button type="button" data-sub-down="accent" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">-</button>
+            </div>
+
+            <!-- Channel 2: Quarter -->
+            <div class="fader-channel">
+              <button type="button" data-sub-up="quarter" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">+</button>
+              <div data-fader-ch="quarter" data-sub-toggle="quarter" class="fader-track-wrap" title="上下ドラッグまたはタップで4分音符音量調整">
+                <div id="barSubQuarter" class="fader-fill" style="height: 100%"></div>
+                <div class="fader-overlay-info">
+                  <span class="text-xs sm:text-sm font-black text-white">♩4分</span>
+                  <span id="valSubQuarter" class="font-mono text-xs sm:text-base font-extrabold text-white">10</span>
+                </div>
+              </div>
+              <button type="button" data-sub-down="quarter" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">-</button>
+            </div>
+
+            <!-- Channel 3: Eighth -->
+            <div class="fader-channel">
+              <button type="button" data-sub-up="eighth" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">+</button>
+              <div data-fader-ch="eighth" data-sub-toggle="eighth" class="fader-track-wrap" title="上下ドラッグまたはタップで8分音符音量調整">
+                <div id="barSubEighth" class="fader-fill" style="height: 0%"></div>
+                <div class="fader-overlay-info">
+                  <span class="text-xs sm:text-sm font-black text-white">♪8分</span>
+                  <span id="valSubEighth" class="font-mono text-xs sm:text-base font-extrabold text-white">0</span>
+                </div>
+              </div>
+              <button type="button" data-sub-down="eighth" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">-</button>
+            </div>
+
+            <!-- Channel 4: Sixteenth -->
+            <div class="fader-channel">
+              <button type="button" data-sub-up="sixteenth" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">+</button>
+              <div data-fader-ch="sixteenth" data-sub-toggle="sixteenth" class="fader-track-wrap" title="上下ドラッグまたはタップで16分音符音量調整">
+                <div id="barSubSixteenth" class="fader-fill" style="height: 0%"></div>
+                <div class="fader-overlay-info">
+                  <span class="text-xs sm:text-sm font-black text-white">♬16分</span>
+                  <span id="valSubSixteenth" class="font-mono text-xs sm:text-base font-extrabold text-white">0</span>
+                </div>
+              </div>
+              <button type="button" data-sub-down="sixteenth" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">-</button>
+            </div>
+
+            <!-- Channel 5: Triplet -->
+            <div class="fader-channel">
+              <button type="button" data-sub-up="triplet" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">+</button>
+              <div data-fader-ch="triplet" data-sub-toggle="triplet" class="fader-track-wrap" title="上下ドラッグまたはタップで3連符音量調整">
+                <div id="barSubTriplet" class="fader-fill" style="height: 0%"></div>
+                <div class="fader-overlay-info">
+                  <span class="text-xs sm:text-sm font-black text-white">3連符</span>
+                  <span id="valSubTriplet" class="font-mono text-xs sm:text-base font-extrabold text-white">0</span>
+                </div>
+              </div>
+              <button type="button" data-sub-down="triplet" class="fader-step-btn hw-btn w-full py-1.5 text-xs sm:text-sm font-black">-</button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- =================================================================
+           LOWER KEYBOARD DECK
+           - Left: Key Zoom (1.5Oct / 2.5Oct / 4Oct / 61鍵)
+           - Center: Octave Shift Keys (◀OCT | C4 (+0) | OCT▶) — C2..C6 buttons removed!
+           - Right: Quick Chord Audition (Maj / min / 7th / m7 / M7)
+           ================================================================= -->
+      <section id="lowerKeyboardDeck" class="w-full flex-1 min-h-0 flex flex-col justify-between bg-[#121210]">
+        <!-- Single-Line Hardware Keyboard Ribbon -->
+        <div class="px-2.5 py-1 bg-[#1b1b18] border-t border-b border-[#383832] grid grid-cols-3 items-center gap-2 shrink-0 whitespace-nowrap">
+          <!-- Left: Key Zoom -->
+          <div class="flex items-center justify-start gap-1">
+            <button type="button" data-key-zoom="mobile" class="key-zoom-btn hw-btn-ghost px-2 py-1 text-xs">1.5Oct</button>
+            <button type="button" data-key-zoom="standard" class="key-zoom-btn hw-btn-ghost is-active px-2 py-1 text-xs">2.5Oct</button>
+            <button type="button" data-key-zoom="wide" class="key-zoom-btn hw-btn-ghost px-2 py-1 text-xs">4Oct</button>
+            <button type="button" data-key-zoom="full61" class="key-zoom-btn hw-btn-ghost px-2 py-1 text-xs">61鍵</button>
+          </div>
+
+          <!-- Center: Octave Shift Keys (Moved to Center! Shifts C〇 labels on the keyboard!) -->
+          <div class="flex items-center justify-center gap-1.5">
+            <button id="btnOctDown" type="button" class="hw-btn px-3 py-1 text-xs font-extrabold">◀OCT</button>
+            <span id="labelOctShift" class="bg-[#121210] border border-[#383832] rounded-sm font-mono text-xs font-extrabold px-2.5 py-0.5 text-[#de5d4e] min-w-[64px] text-center">C4 (+0)</span>
+            <button id="btnOctUp" type="button" class="hw-btn px-3 py-1 text-xs font-extrabold">OCT▶</button>
+          </div>
+
+          <!-- Right: Quick Chord Audition -->
+          <div class="flex items-center justify-end gap-1">
+            <button type="button" data-quick-chord="maj" class="quick-chord-btn hw-btn-ghost px-2 py-1 text-xs font-mono">Maj</button>
+            <button type="button" data-quick-chord="min" class="quick-chord-btn hw-btn-ghost px-2 py-1 text-xs font-mono">min</button>
+            <button type="button" data-quick-chord="dom7" class="quick-chord-btn hw-btn-ghost px-2 py-1 text-xs font-mono">7th</button>
+            <button type="button" data-quick-chord="min7" class="quick-chord-btn hw-btn-ghost px-2 py-1 text-xs font-mono">m7</button>
+            <button type="button" data-quick-chord="maj7" class="quick-chord-btn hw-btn-ghost px-2 py-1 text-xs font-mono">M7</button>
+          </div>
+        </div>
+
+        <!-- 61-Key Multi-Touch Piano Keybed -->
+        <div id="keyboardWrapper" class="keyboard-viewport flex-1 min-h-0">
+          <div id="keyboardStage" class="keyboard-stage"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===================================================================
+         3. EXCLUSIVE FULL-SCREEN SETTINGS VIEW (設定パネル表示時は設定のみ表示)
+         Contains (1) 基準ピッチ, (2) 移調, (3) 音色, plus 主音/調律 & Metronome/Synth
+         =================================================================== -->
+    <section id="panelDetailedSettings" class="hidden flex-1 min-h-0 w-full overflow-y-auto p-3 sm:p-5 bg-[#171715] text-xs">
+      <div class="max-w-6xl mx-auto flex flex-col gap-3 pb-8">
+        <!-- Settings Header -->
+        <div class="flex items-center justify-between border-b border-[#383832] pb-2.5 sticky top-0 bg-[#171715] z-10 pt-1">
+          <div class="flex items-baseline gap-2.5">
+            <h2 class="text-base sm:text-lg font-black text-[#f5f4f0]">⚙ GB-100 システム＆調律設定</h2>
+            <span class="font-mono text-xs text-[#de5d4e] font-bold">ver0.93</span>
+          </div>
+          <button id="btnCloseSettings" type="button" class="hw-btn is-active px-4 py-2 text-xs sm:text-sm font-extrabold">
+            ✓ 戻る
+          </button>
+        </div>
+
+        <!-- Primary 3 Settings: (1) 基準ピッチ, (2) 移調, (3) 音色 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- (1) 基準ピッチ (MASTER PITCH) -->
+          <div class="hw-module p-3.5 flex flex-col justify-between gap-2.5">
+            <div>
+              <div class="flex items-center justify-between border-b border-[#383832] pb-1.5 mb-2">
+                <span class="font-extrabold text-[#f5f4f0] text-sm">(1) 基準ピッチ (A4)</span>
+                <button id="btnToggleHzCent" type="button" class="hw-btn-ghost px-2 py-0.5 text-xs font-mono">Hz / Cent</button>
+              </div>
+              <div class="hw-readout text-center py-2 mb-2">
+                <span id="settingsPitchReadout" class="font-mono text-2xl font-black text-[#f5f4f0]">442.0 Hz</span>
+                <span id="settingsCentReadout" class="block font-mono text-xs text-[#c7c5bc] mt-0.5">+7.8 cent (A=440Hz基準)</span>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5 mb-2">
+                <button type="button" data-pitch-hz="440.0" class="pitch-quick-btn hw-btn py-2 text-xs font-mono">440Hz</button>
+                <button type="button" data-pitch-hz="441.0" class="pitch-quick-btn hw-btn py-2 text-xs font-mono">441Hz</button>
+                <button type="button" data-pitch-hz="442.0" class="pitch-quick-btn hw-btn is-active py-2 text-xs font-mono">442Hz</button>
+                <button type="button" data-pitch-hz="443.0" class="pitch-quick-btn hw-btn py-2 text-xs font-mono">443Hz</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnPitchDown" type="button" class="hw-btn px-3 py-2 text-xs font-mono">-</button>
+              <input id="sliderMasterPitch" type="range" min="415.3" max="466.2" step="0.1" value="442.0" class="hw-slider accent-thumb flex-1" aria-label="基準ピッチスライダー" />
+              <button id="btnPitchUp" type="button" class="hw-btn px-3 py-2 text-xs font-mono">+</button>
+            </div>
+          </div>
+
+          <!-- (2) 移調 (TRANSPOSE) -->
+          <div class="hw-module p-3.5 flex flex-col justify-between gap-2.5">
+            <div>
+              <div class="flex items-center justify-between border-b border-[#383832] pb-1.5 mb-2">
+                <span class="font-extrabold text-[#f5f4f0] text-sm">(2) 移調 (TRANSPOSE)</span>
+                <span id="badgeTransposeVal" class="font-mono font-bold text-[#de5d4e] text-xs">C (+0)</span>
+              </div>
+              <p class="text-xs text-[#c7c5bc] mb-2">管楽器の記譜キーに合わせて移調します（F管ホルンは実音5度下 -7 / 範囲 -12〜+12半音）。</p>
+              <div class="grid grid-cols-4 gap-1.5 mb-2">
+                <button type="button" data-transpose="0" class="transpose-preset-btn hw-btn is-active py-2.5 text-sm font-black" title="C管 (実音)">C</button>
+                <button type="button" data-transpose="-2" class="transpose-preset-btn hw-btn py-2.5 text-sm font-black" title="B♭管 (長2度下 -2)">B♭</button>
+                <button type="button" data-transpose="3" class="transpose-preset-btn hw-btn py-2.5 text-sm font-black" title="E♭管 (短3度上 +3)">E♭</button>
+                <button type="button" data-transpose="-7" class="transpose-preset-btn hw-btn py-2.5 text-sm font-black" title="F管 (完全5度下 -7)">F</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <button id="btnTransDown" type="button" class="hw-btn flex-1 py-2 text-sm font-black">-</button>
+              <button id="btnTransUp" type="button" class="hw-btn flex-1 py-2 text-sm font-black">+</button>
+            </div>
+          </div>
+
+          <!-- (3) 音色 (TONE SELECTOR: 17 Harmony + GM2) -->
+          <div class="hw-module p-3.5 flex flex-col justify-between gap-2.5">
+            <div>
+              <div class="flex items-center justify-between border-b border-[#383832] pb-1.5 mb-2">
+                <span class="font-extrabold text-[#f5f4f0] text-sm">(3) 音色選択 (専用17音色＋GM2)</span>
+                <span id="badgeCurrentTone" class="font-mono text-[#de5d4e] text-xs font-bold">001: CLARINET</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 mb-2">
+                <button type="button" data-tone-cat="ORGAN" class="tone-cat-btn hw-btn py-2 text-xs">オルガン</button>
+                <button type="button" data-tone-cat="WOODWIND" class="tone-cat-btn hw-btn is-active py-2 text-xs">木管</button>
+                <button type="button" data-tone-cat="BRASS" class="tone-cat-btn hw-btn py-2 text-xs">金管</button>
+                <button type="button" data-tone-cat="CHOIR" class="tone-cat-btn hw-btn py-2 text-xs">コーラス</button>
+                <button type="button" data-tone-cat="SYNTH" class="tone-cat-btn hw-btn py-2 text-xs">シンセ</button>
+                <button type="button" data-tone-cat="PIANO_GM" class="tone-cat-btn hw-btn py-2 text-xs">ピアノ他</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="btnTonePrev" type="button" class="hw-btn px-3 py-2 text-xs font-black">-</button>
+              <select id="selectToneVariation" class="hw-select flex-1 min-w-0" aria-label="音色バリエーション選択"></select>
+              <button id="btnToneNext" type="button" class="hw-btn px-3 py-2 text-xs font-black">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Row: Harmony Root/Scale, Sound Parameters, User Scale Tune, Metronome Options -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Sound, Root, Scale & Envelope Parameters -->
+          <div class="hw-module p-3.5 flex flex-col gap-2.5">
+            <div class="font-extrabold text-[#f5f4f0] border-b border-[#383832] pb-1.5 text-sm">調律主音・音源・エフェクト</div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">調律時の主音 (ROOT):</span>
+              <select id="selectRootMode" class="hw-select" aria-label="調律時の主音">
+                <option value="AUTO">Auto (和音自動認識)</option>
+                <option value="0">C</option>
+                <option value="1">C#</option>
+                <option value="2">D</option>
+                <option value="3">E♭</option>
+                <option value="4">E</option>
+                <option value="5">F</option>
+                <option value="6">F#</option>
+                <option value="7">G</option>
+                <option value="8">G#</option>
+                <option value="9">A</option>
+                <option value="10">B♭</option>
+                <option value="11">B</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">NOTE NAME (黒鍵# / ♭固定):</span>
+              <select id="selectNoteNameStyle" class="hw-select" aria-label="黒鍵・音名表記">
+                <option value="TUNER" selected>C# / E♭ / F# / G# / B♭ (チューナー標準)</option>
+                <option value="FLAT">D♭ / E♭ / F# / A♭ / B♭ (フラット系)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">純正律プリセット:</span>
+              <select id="selectScalePreset" class="hw-select" aria-label="純正律プリセット選択">
+                <option value="AUTO_PURE">Auto (自動)</option>
+                <option value="JUST_MAJ">JUST Maj (長調)</option>
+                <option value="JUST_MIN">JUST Min (短調)</option>
+                <option value="JUST_7TH">JUST 7th (-31.2c)</option>
+                <option value="JUST_7TH_WIND">JUST 7th (-17.6c 吹奏楽)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">DOMINANT 7TH (属7 b7調律):</span>
+              <select id="selectDom7Mode" class="hw-select" aria-label="属7のb7セント設定">
+                <option value="SEPTIMAL" selected>-31.2c (7/4 自然七度)</option>
+                <option value="WIND">-17.6c (9/5 吹奏楽実用)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">KEY TOUCH (鍵盤タッチ):</span>
+              <select id="selectKeyTouch" class="hw-select">
+                <option value="Fix">Fix (固定)</option>
+                <option value="Light">Light (軽い)</option>
+                <option value="Medium" selected>Medium (標準)</option>
+                <option value="Heavy">Heavy (重い)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">REVERB (残響 0〜10):</span>
+              <div class="flex items-center gap-2">
+                <input id="sliderReverb" type="range" min="0" max="10" value="3" class="hw-slider w-24" />
+                <span id="labelReverb" class="font-mono w-5 text-right">3</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">ATTACK (立ち上がり -10〜+10):</span>
+              <div class="flex items-center gap-2">
+                <input id="sliderAttack" type="range" min="-10" max="10" value="0" class="hw-slider w-24" />
+                <span id="labelAttack" class="font-mono w-6 text-right">0</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">RELEASE (余韻 -10〜+10):</span>
+              <div class="flex items-center gap-2">
+                <input id="sliderRelease" type="range" min="-10" max="10" value="0" class="hw-slider w-24" />
+                <span id="labelRelease" class="font-mono w-6 text-right">0</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">BRILLIANCE (明るさ -10〜+10):</span>
+              <div class="flex items-center gap-2">
+                <input id="sliderBrilliance" type="range" min="-10" max="10" value="0" class="hw-slider w-24" />
+                <span id="labelBrilliance" class="font-mono w-6 text-right">0</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">PIANO TUNE (打楽器調律):</span>
+              <select id="selectPianoTune" class="hw-select">
+                <option value="Off">Off (常に平均律)</option>
+                <option value="On" selected>On (調律を適用)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#c7c5bc]">BASS BOOST (C2〜C3倍音補強):</span>
+              <select id="selectBassBoost" class="hw-select">
+                <option value="Off" selected>Off (原音のみ・標準)</option>
+                <option value="Auto">Auto (スマホ/低音自動補強)</option>
+                <option value="On">On (常に低音倍音を補強)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- User Scale Tune Editor (User 1-20) -->
+          <div class="hw-module p-3.5 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between border-b border-[#383832] pb-1.5">
+              <span class="font-extrabold text-[#f5f4f0] text-sm">ユーザースケール調律 (User 1〜20)</span>
+              <button id="btnResetUserTune" type="button" class="hw-btn-ghost px-2 py-0.5 text-xs">RESET</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5" id="userScaleCentGrid"></div>
+          </div>
+
+          <!-- Metronome Sound, Pattern Memory & System Utilities -->
+          <div class="hw-module p-3.5 flex flex-col justify-between gap-2.5">
+            <div class="flex flex-col gap-2">
+              <div class="font-extrabold text-[#f5f4f0] border-b border-[#383832] pb-1.5 text-sm">メトロノーム詳細 &amp; パターン保存</div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">BEAT SOUND (音色):</span>
+                <select id="selectBeatSound" class="hw-select">
+                  <option value="CLICK">電子クリック (Click)</option>
+                  <option value="MECH">振り子 (Mechanical)</option>
+                  <option value="WOOD">ウッドブロック (Wood)</option>
+                  <option value="COWBELL">カウベル (Cowbell)</option>
+                  <option value="BEEP">電子ビープ (Beep)</option>
+                  <option value="STICK">スティック (Stick)</option>
+                  <option value="VOICE_JA">日本語カウント (1-2-3)</option>
+                  <option value="VOICE_EN">英語カウント (One-Two)</option>
+                </select>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">BEAT PATTERN (1〜99):</span>
+                <select id="selectBeatPattern" class="hw-select max-w-[165px]"></select>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">BT ALTERNATE (同時発音):</span>
+                <button id="btnToggleBeatAlt" type="button" class="hw-btn px-2.5 py-1 text-xs font-mono">重なり: All</button>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">BEAT CONTROL (音量操作):</span>
+                <select id="selectBeatControlMode" class="hw-select">
+                  <option value="On" selected>On (10段階調整)</option>
+                  <option value="Off">Off (ON/OFF切替)</option>
+                </select>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">TAP TEMPO KEY (右端白鍵/C7):</span>
+                <select id="selectTapKeyMode" class="hw-select">
+                  <option value="Off" selected>Off (通常演奏)</option>
+                  <option value="On">On (表示右端の白鍵でTAP)</option>
+                </select>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">TOUCH SOUND (操作音):</span>
+                <select id="selectTouchSound" class="hw-select">
+                  <option value="On" selected>On</option>
+                  <option value="Off">Off</option>
+                </select>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[#c7c5bc]">CONTRAST (コントラスト):</span>
+                <input id="sliderLcdContrast" type="range" min="0" max="10" value="5" class="hw-slider w-24" />
+              </div>
+              <div class="flex items-center gap-1.5 mt-1">
+                <button id="btnSaveBeatPattern" type="button" class="hw-btn flex-1 py-1.5 text-xs">ビート保存</button>
+                <button id="btnDeleteBeatPattern" type="button" class="hw-btn-ghost px-2.5 py-1.5 text-xs">削除</button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-[#383832] pt-2">
+              <span class="font-mono text-xs text-[#8e8c82]">MODEL: GB-100 ver0.93</span>
+              <button id="btnFactoryReset" type="button" class="hw-btn-ghost px-2.5 py-1 text-xs">RESET</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastNotice" class="fixed bottom-4 right-4 z-50 hidden bg-[#20201d] border-2 border-[#de5d4e] text-[#f5f4f0] px-3.5 py-2 rounded-sm shadow-xl text-xs font-bold"></div>
+
+  </div><!-- /#appLandscapeRoot -->
+
+  <script>
+    /*************************************************************************
+     * GB-100 ver0.93 — Complete Harmony & Rhythm Hardware Trainer
+     * Key Upgrades in ver0.91:
+     * 1. Zero-Crackle Tablet Audio Engine: Replaced white-noise ConvolverNode
+     *    with a pure, noise-free Algorithmic Hall Reverb (multi-tap delay +
+     *    lowpass damping network) + Master DynamicsCompressor limiter +
+     *    pure setTargetAtTime release envelope with automatic node disconnect.
+     * 2. Centered Octave Shift Keys (◀OCT / OCT▶), removed C2..C6 buttons, and
+     *    dynamically updates the C〇 labels printed on the piano keys when
+     *    ◀OCT / OCT▶ is pressed.
+     * 3. Tablet 3-Finger Simultaneous Multi-Touch Fix: Captures pointerdown /
+     *    pointermove / pointerup / pointercancel directly on the keybed before
+     *    tablet OS 3-finger gesture recognizers can swallow TouchEvents.
+     * 4. Smartphone Metronome Full-Height View: Hides the keyboard when the
+     *    Metronome tab is selected on Smartphone so 強拍 and ♩4分〜3連符 faders
+     *    display tall and clear; replaced 主音:Auto / 調律:Auto on the Harmony
+     *    bar with an inline Metronome Play/Stop button.
+     * 5. Dynamic ▷ (stopped) and □ (playing) icons on Metronome Play/Stop buttons.
+     *************************************************************************/
+    const APP_VERSION = "ver0.93";
+    // Fixed Chromatic Tuner Note Names:
+    // Standard chromatic tuners (Korg TM-60 / CA-50, Yamaha TDM-700 / TD-38) fix the 5 accidentals
+    // to C#, E♭, F#, G#, B♭ (or D♭, E♭, F#, A♭, B♭) and NEVER flip #/♭ depending on pressed keys!
+    const NOTE_NAMES_TUNER = ["C", "C#", "D", "E♭", "E", "F", "F#", "G", "G#", "A", "B♭", "B"];
+    const NOTE_NAMES_FLAT_FIXED = ["C", "D♭", "D", "E♭", "E", "F", "F#", "G", "A♭", "A", "B♭", "B"];
+    let NOTE_NAMES_DISPLAY = NOTE_NAMES_TUNER.slice();
+
+    function getNoteDisplayName(pc) {
+      const normPc = ((pc % 12) + 12) % 12;
+      return NOTE_NAMES_DISPLAY[normPc];
+    }
+
+    const TONE_CATALOG = {
+      ORGAN: [
+        { id: "ORG1", code: "001", name: "ORGAN 1", label: "001: ORGAN 1 (パイプオルガン)", harmonics: [1.0, 0.65, 0.35, 0.45, 0.15, 0.2, 0.05, 0.1], cutoff: 2600, attack: 0.022, release: 0.16 },
+        { id: "ORG2", code: "002", name: "ORGAN 2", label: "002: ORGAN 2 (リードオルガン)", harmonics: [1.0, 0.85, 0.6, 0.7, 0.4, 0.45, 0.25, 0.3, 0.15], cutoff: 3800, attack: 0.018, release: 0.16 }
+      ],
+      WOODWIND: [
+        { id: "CLARINET", code: "001", name: "CLARINET", label: "001: CLARINET (クラリネット)", harmonics: [1.0, 0.08, 0.78, 0.06, 0.52, 0.04, 0.28, 0.02, 0.14], cutoff: 2400, attack: 0.03, release: 0.17 },
+        { id: "OBOE", code: "002", name: "OBOE", label: "002: OBOE (オーボエ)", harmonics: [0.55, 1.0, 0.85, 0.7, 0.5, 0.35, 0.2, 0.12], cutoff: 3400, attack: 0.028, release: 0.17 },
+        { id: "FLUTE", code: "003", name: "FLUTE", label: "003: FLUTE (フルート)", harmonics: [1.0, 0.28, 0.08, 0.02, 0.01], cutoff: 2100, attack: 0.04, release: 0.18 },
+        { id: "SAX", code: "004", name: "SAXOPHONE", label: "004: SAXOPHONE (サックス)", harmonics: [1.0, 0.72, 0.54, 0.42, 0.28, 0.18, 0.1, 0.05], cutoff: 2800, attack: 0.028, release: 0.17 }
+      ],
+      BRASS: [
+        { id: "TRUMPET", code: "001", name: "TRUMPET", label: "001: TRUMPET (トランペット)", harmonics: [0.8, 1.0, 0.85, 0.72, 0.58, 0.42, 0.3, 0.2, 0.12], cutoff: 3900, attack: 0.022, release: 0.17 },
+        { id: "HORN", code: "002", name: "HORN", label: "002: HORN (ホルン)", harmonics: [1.0, 0.82, 0.55, 0.32, 0.18, 0.08, 0.04], cutoff: 1950, attack: 0.035, release: 0.19 },
+        { id: "EUPHONIUM", code: "003", name: "EUPHONIUM", label: "003: EUPHONIUM (ユーフォニアム)", harmonics: [1.0, 0.75, 0.45, 0.25, 0.12, 0.05], cutoff: 1750, attack: 0.035, release: 0.19 }
+      ],
+      CHOIR: [
+        { id: "PITCH_PIPE", code: "001", name: "PITCH PIPE", label: "001: PITCH PIPE (ピッチパイプ)", harmonics: [1.0, 0.9, 0.75, 0.6, 0.45, 0.3, 0.2, 0.1], cutoff: 3600, attack: 0.015, release: 0.14 },
+        { id: "CHOIR1", code: "002", name: "CHOIR 1", label: "002: CHOIR 1 (クワイヤ Aah)", harmonics: [1.0, 0.65, 0.8, 0.45, 0.25, 0.12, 0.05], cutoff: 2200, attack: 0.05, release: 0.22 },
+        { id: "CHOIR2", code: "003", name: "CHOIR 2", label: "003: CHOIR 2 (クワイヤ Mmm)", harmonics: [1.0, 0.45, 0.25, 0.1, 0.04], cutoff: 1500, attack: 0.055, release: 0.22 }
+      ],
+      SYNTH: [
+        { id: "SINE", code: "001", name: "SINE WAVE", label: "001: SINE WAVE (正弦波)", harmonics: [1.0], cutoff: 4000, attack: 0.015, release: 0.15 },
+        { id: "TRIANGLE", code: "002", name: "TRIANGLE WAV", label: "002: TRIANGLE WAV (三角波)", harmonics: [1.0, 0, 0.111, 0, 0.04, 0, 0.02, 0, 0.012], cutoff: 3600, attack: 0.015, release: 0.15 },
+        { id: "SQUARE", code: "003", name: "SQUARE WAVE", label: "003: SQUARE WAVE (矩形波)", harmonics: [1.0, 0, 0.333, 0, 0.2, 0, 0.143, 0, 0.111], cutoff: 3200, attack: 0.015, release: 0.15 },
+        { id: "SAW", code: "004", name: "SAW WAVE", label: "004: SAW WAVE (ノコギリ波)", harmonics: [1.0, 0.5, 0.333, 0.25, 0.2, 0.166, 0.143, 0.125, 0.111], cutoff: 3500, attack: 0.015, release: 0.15 },
+        { id: "STRING", code: "005", name: "STRING", label: "005: STRING (ストリングス)", harmonics: [1.0, 0.65, 0.45, 0.35, 0.28, 0.22, 0.16, 0.12], cutoff: 3000, attack: 0.045, release: 0.24 }
+      ],
+      PIANO_GM: [
+        { id: "GM_PIANO", code: "GM001", name: "GRAND PIANO", label: "GM001: GRAND PIANO (ピアノ)", harmonics: [1.0, 0.6, 0.35, 0.2, 0.12, 0.06], cutoff: 3600, attack: 0.008, release: 0.28, percussive: true },
+        { id: "GM_EPIANO", code: "GM005", name: "E.PIANO", label: "GM005: E.PIANO (エレピ)", harmonics: [1.0, 0.35, 0.12, 0.08, 0.02], cutoff: 2800, attack: 0.008, release: 0.25, percussive: true },
+        { id: "GM_HARPSI", code: "GM007", name: "HARPSICHORD", label: "GM007: HARPSICHORD (チェンバロ)", harmonics: [0.8, 1.0, 0.75, 0.6, 0.45, 0.35, 0.25], cutoff: 4500, attack: 0.006, release: 0.20, percussive: true },
+        { id: "GM_CELESTA", code: "GM009", name: "CELESTA", label: "GM009: CELESTA (チェレスタ)", harmonics: [1.0, 0.15, 0.05, 0.25], cutoff: 4200, attack: 0.006, release: 0.22, percussive: true },
+        { id: "GM_VIBES", code: "GM012", name: "VIBRAPHONE", label: "GM012: VIBRAPHONE (ヴィブラフォン)", harmonics: [1.0, 0.1, 0.04, 0.18], cutoff: 3400, attack: 0.008, release: 0.30, percussive: true },
+        { id: "GM_MARIMBA", code: "GM013", name: "MARIMBA", label: "GM013: MARIMBA (マリンバ)", harmonics: [1.0, 0.08, 0.02, 0.22], cutoff: 2600, attack: 0.006, release: 0.18, percussive: true },
+        { id: "GM_CHIMES", code: "GM015", name: "TUBULAR BELL", label: "GM015: TUBULAR BELL (チャイム)", harmonics: [0.7, 1.0, 0.55, 0.4, 0.3, 0.25], cutoff: 4200, attack: 0.006, release: 0.38, percussive: true },
+        { id: "GM_HARP", code: "GM047", name: "ORCH. HARP", label: "GM047: ORCH. HARP (ハープ)", harmonics: [1.0, 0.45, 0.2, 0.08, 0.03], cutoff: 3100, attack: 0.008, release: 0.30, percussive: true },
+        { id: "GM_CONTRABASS", code: "GM044", name: "CONTRABASS", label: "GM044: CONTRABASS (コントラバス)", harmonics: [1.0, 0.85, 0.55, 0.35, 0.2, 0.1], cutoff: 1600, attack: 0.03, release: 0.18 },
+        { id: "GM_TUBA", code: "GM059", name: "TUBA", label: "GM059: TUBA (チューバ)", harmonics: [1.0, 0.8, 0.5, 0.28, 0.14, 0.06], cutoff: 1500, attack: 0.03, release: 0.17 }
+      ]
+    };
+
+    // Helmholtz Pure Just Intonation Offsets (in Cents from Equal Temperament)
+    // - JUST_7TH: Septimal minor 7th 7/4 (-31.17c)
+    // - JUST_7TH_WIND: Wind-band practical minor 7th 9/5 (-17.60c)
+    const JUST_PRESET_CENTS = {
+      JUST_MAJ:      [0.0, 11.73, 3.91, 15.64, -13.69, -1.96, -9.78,  1.96, 13.69, -15.64, -3.91,  -11.73],
+      JUST_MIN:      [0.0, 11.73, 3.91, 15.64, -13.69, -1.96, 9.78,   1.96, 13.69, -15.64, 17.60,  -11.73],
+      JUST_7TH:      [0.0, 11.73, 3.91, 15.64, -13.69, -1.96, -17.49, 1.96, 13.69, -15.64, -31.17, -11.73],
+      JUST_7TH_WIND: [0.0, 11.73, 3.91, 15.64, -13.69, -1.96, -17.49, 1.96, 13.69, -15.64, -17.60, -11.73]
+    };
+    // Augmented triad: stacked pure major thirds 1 : 5/4 : 25/16 (G# = -27.37c)
+    JUST_PRESET_CENTS.JUST_AUG = JUST_PRESET_CENTS.JUST_MAJ.slice();
+    JUST_PRESET_CENTS.JUST_AUG[8] = -27.37;
+
+    const DEFAULT_BEAT_PATTERNS = {
+      1: { name: "01: 4/4 基本 (4分)", num: 4, den: 4, tempo: 120, sub: { accent: 10, quarter: 10, eighth: 0, sixteenth: 0, triplet: 0 } },
+      2: { name: "02: 4/4 8分裏拍練習", num: 4, den: 4, tempo: 112, sub: { accent: 10, quarter: 7, eighth: 10, sixteenth: 0, triplet: 0 } },
+      3: { name: "03: 4/4 16分刻み基礎", num: 4, den: 4, tempo: 96, sub: { accent: 10, quarter: 8, eighth: 6, sixteenth: 9, triplet: 0 } },
+      4: { name: "04: 4/4 3連符練習", num: 4, den: 4, tempo: 100, sub: { accent: 10, quarter: 8, eighth: 0, sixteenth: 0, triplet: 9 } },
+      5: { name: "05: 2/4 行進曲 (March)", num: 2, den: 4, tempo: 120, sub: { accent: 10, quarter: 9, eighth: 6, sixteenth: 0, triplet: 0 } },
+      6: { name: "06: 3/4 ワルツ (Waltz)", num: 3, den: 4, tempo: 132, sub: { accent: 10, quarter: 8, eighth: 0, sixteenth: 0, triplet: 0 } },
+      7: { name: "07: 6/8 複合拍子", num: 6, den: 8, tempo: 120, sub: { accent: 10, quarter: 8, eighth: 9, sixteenth: 0, triplet: 0 } },
+      8: { name: "08: 5/4 変拍子", num: 5, den: 4, tempo: 120, sub: { accent: 10, quarter: 9, eighth: 5, sixteenth: 0, triplet: 0 } },
+      9: { name: "09: 7/8 変拍子", num: 7, den: 8, tempo: 136, sub: { accent: 10, quarter: 7, eighth: 10, sixteenth: 0, triplet: 0 } },
+      10: { name: "10: ロングトーン (♩=60)", num: 4, den: 4, tempo: 60, sub: { accent: 10, quarter: 10, eighth: 5, sixteenth: 0, triplet: 0 } }
+    };
+
+    const state = {
+      powerOn: true,
+      settingsOpen: false,
+      isPhoneMode: false,
+      phoneTab: "harmony",
+      harmonyVol: 0.80,
+      harmonyMuted: false,
+      metroMasterVol: 8,
+      metroMuted: false,
+      masterTuneHz: 442.0,
+      pitchDisplayMode: "HZ",
+      transpose: 0,
+      octaveShift: 0,
+      temperament: "EQUAL",
+      scalePreset: "AUTO_PURE",
+      dom7Mode: "SEPTIMAL",
+      noteNameStyle: "TUNER",
+      bassBoostMode: "Off",
+      currentTapKeyMidi: 96,
+      rootMode: "AUTO",
+      detectedRootPc: 0,
+      detectedChordLabel: "---",
+      detectedPresetUsed: "JUST_MAJ",
+      holdEnabled: false,
+      toneCategory: "WOODWIND",
+      toneIndex: 0,
+      keyTouch: "Medium",
+      reverbLevel: 3,
+      attackMod: 0,
+      releaseMod: 0,
+      brillianceMod: 0,
+      pianoTune: "On",
+      touchSound: "On",
+      lcdContrast: 5,
+      userScales: Array.from({ length: 20 }, () => Array(12).fill(0.0)),
+      activeUserScaleIdx: 0,
+      keyZoom: "standard",
+      currentScrollOctave: 4,
+      pressedPointers: new Map(), // pointerId -> midiNote
+      pointerVelocities: new Map(), // midiNote -> latest strike velocity (0.1..1.0)
+      activeStackPointers: new Map(), // pointerId -> midiNote (for 積重 deduplication)
+      lastStackToggleTimeByMidi: new Map(), // midiNote -> timestampMs (prevents pointerdown+touchstart double toggle)
+      latchedNotes: new Set(),
+      cancelProtectedNotes: new Set(),
+      lastMultiTouchTimestamp: 0,
+      activeVoices: new Map(),
+      metroPlaying: false,
+      tempo: 120,
+      beatNum: 4,
+      beatDen: 4,
+      beatSound: "CLICK",
+      beatAlternate: "Alternate",
+      beatControlMode: "On",
+      tapKeyMode: "Off",
+      subVol: {
+        accent: 10,
+        quarter: 10,
+        eighth: 0,
+        sixteenth: 0,
+        triplet: 0
+      },
+      beatPatterns: {},
+      activePatternSlot: 0,
+      tapTimestamps: []
+    };
+
+    function loadSavedStorage() {
+      try {
+        const savedPatterns = localStorage.getItem("gb100_beat_patterns_v060");
+        if (savedPatterns) {
+          state.beatPatterns = JSON.parse(savedPatterns);
+        } else {
+          state.beatPatterns = JSON.parse(JSON.stringify(DEFAULT_BEAT_PATTERNS));
+        }
+        const savedUserScales = localStorage.getItem("gb100_user_scales_v060");
+        if (savedUserScales) {
+          state.userScales = JSON.parse(savedUserScales);
+        }
+      } catch (e) {
+        state.beatPatterns = JSON.parse(JSON.stringify(DEFAULT_BEAT_PATTERNS));
+      }
+    }
+
+    function saveStorage() {
+      try {
+        localStorage.setItem("gb100_beat_patterns_v060", JSON.stringify(state.beatPatterns));
+        localStorage.setItem("gb100_user_scales_v060", JSON.stringify(state.userScales));
+      } catch (e) {}
+    }
+
+    /*************************************************************************
+     * RESPONSIVE PHONE vs TABLET DETECTOR & FORCED LANDSCAPE HANDLER
+     * - When Smartphone is in Metronome tab, hides keyboard so 4分~3連符 faders
+     *   get 100% of the workspace height!
+     *************************************************************************/
+    function evaluateDeviceLayoutMode() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const shortSide = Math.min(w, h);
+      const longSide = Math.max(w, h);
+      const isPhone = (shortSide <= 520 || (longSide <= 920 && shortSide <= 540));
+      state.isPhoneMode = isPhone;
+
+      document.body.classList.toggle("is-phone", isPhone);
+      document.body.classList.toggle("is-tablet", !isPhone);
+
+      applyPhoneTabVisibility();
+    }
+
+    function applyPhoneTabVisibility() {
+      const hPane = document.getElementById("harmonyPane");
+      const mPane = document.getElementById("metroPane");
+      if (!hPane || !mPane) return;
+
+      if (state.isPhoneMode) {
+        const isMetro = (state.phoneTab === "metro");
+        hPane.classList.toggle("hidden", isMetro);
+        mPane.classList.toggle("hidden", !isMetro);
+        document.body.classList.toggle("phone-metro-full", isMetro);
+      } else {
+        hPane.classList.remove("hidden");
+        mPane.classList.remove("hidden");
+        document.body.classList.remove("phone-metro-full");
+      }
+
+      document.querySelectorAll(".phone-tab-btn").forEach(btn => {
+        btn.classList.toggle("is-active", btn.dataset.phoneTab === state.phoneTab);
+      });
+    }
+
+    /*************************************************************************
+     * WEB AUDIO API SYNTHESIS ENGINE (ZERO-CRACKLE ALGORITHMIC HALL REVERB)
+     * - Eliminates white-noise ConvolverNode graininess & FFT underruns on tablets.
+     * - Uses a pure, noise-free 4-line stereo feedback delay network with warm
+     *   lowpass damping + Master DynamicsCompressor soft limiter.
+     *************************************************************************/
+    let audioCtx = null;
+    let masterLimiter = null;
+    let masterHarmonyGain = null;
+    let masterMetroGain = null;
+    let metroHighPass = null;
+    let dryNode = null;
+    let wetReverbGain = null;
+    let audioUnlocked = false;
+    const periodicWaveCache = new Map();
+
+    // Clean headroom scaling so simultaneous Harmony + Metronome NEVER triggers smartphone OS speaker AGC/limiter ducking!
+    const HARMONY_BUS_HEADROOM = 0.56;
+    const METRO_BUS_HEADROOM = 0.54;
+
+    function computeReverbWetGain(level) {
+      const norm = Math.max(0, Math.min(10, level)) / 10;
+      return norm * 0.26;
+    }
+
+    function buildAlgorithmicHallReverb(ctx, inputNode, wetOutputNode) {
+      // Warm, Non-Metallic Hall Reverb:
+      // 1. Pre-delay + warm band-limiting (130Hz..2100Hz) strips harsh upper harmonics before entering reverb.
+      // 2. 4 mutually-prime delay lines with gentle feedback (0.64..0.68), warm lowpass damping (1450..1900Hz),
+      //    and an internal native Biquad allpass phase-diffuser inside each loop so comb teeth never ring metallically.
+      // 3. Cascaded native BiquadFilter allpass diffusion stages (zero delay-loop artifacts, zero metallic scraping).
+      const preDelay = ctx.createDelay(0.1);
+      preDelay.delayTime.value = 0.016;
+
+      const inHighPass = ctx.createBiquadFilter();
+      inHighPass.type = "highpass";
+      inHighPass.frequency.value = 130;
+      inHighPass.Q.value = 0.5;
+
+      const inputFilter = ctx.createBiquadFilter();
+      inputFilter.type = "lowpass";
+      inputFilter.frequency.value = 2100;
+      inputFilter.Q.value = 0.5;
+
+      inputNode.connect(preDelay);
+      preDelay.connect(inHighPass);
+      inHighPass.connect(inputFilter);
+
+      const delayTimes = [0.0317, 0.0379, 0.0439, 0.0503];
+      const feedbacks = [0.64, 0.66, 0.67, 0.68];
+      const loopAllpassFreqs = [380, 560, 820, 1150];
+
+      const sumBus = ctx.createGain();
+      sumBus.gain.value = 0.25;
+
+      delayTimes.forEach((dt, i) => {
+        const dNode = ctx.createDelay(0.1);
+        dNode.delayTime.value = dt;
+
+        const dampFilter = ctx.createBiquadFilter();
+        dampFilter.type = "lowpass";
+        dampFilter.frequency.value = 1900 - i * 140;
+        dampFilter.Q.value = 0.5;
+
+        const loopAp = ctx.createBiquadFilter();
+        loopAp.type = "allpass";
+        loopAp.frequency.value = loopAllpassFreqs[i];
+        loopAp.Q.value = 0.5;
+
+        const fbGain = ctx.createGain();
+        fbGain.gain.value = feedbacks[i];
+
+        inputFilter.connect(dNode);
+        dNode.connect(dampFilter);
+        dampFilter.connect(loopAp);
+        loopAp.connect(fbGain);
+        fbGain.connect(dNode);
+        loopAp.connect(sumBus);
+      });
+
+      // Native Biquad allpass cascade + final warm lowpass filter (zero block-delay cycles!)
+      let stageNode = sumBus;
+      [420, 780, 1340].forEach((freq) => {
+        const ap = ctx.createBiquadFilter();
+        ap.type = "allpass";
+        ap.frequency.value = freq;
+        ap.Q.value = 0.6;
+        stageNode.connect(ap);
+        stageNode = ap;
+      });
+
+      const outLowpass = ctx.createBiquadFilter();
+      outLowpass.type = "lowpass";
+      outLowpass.frequency.value = 2000;
+      outLowpass.Q.value = 0.5;
+
+      stageNode.connect(outLowpass);
+      outLowpass.connect(wetOutputNode);
+    }
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        audioCtx = new AudioContextClass({ latencyHint: "interactive" });
+
+        // Gentle ceiling safety limiter on Harmony bus ONLY (high threshold -1.5dB, low ratio 3:1)
+        // Metronome is isolated on its own high-passed bus with reserved headroom so beats NEVER modulate Harmony!
+        masterLimiter = audioCtx.createDynamicsCompressor();
+        masterLimiter.threshold.value = -1.5;
+        masterLimiter.knee.value = 6.0;
+        masterLimiter.ratio.value = 3.0;
+        masterLimiter.attack.value = 0.010;
+        masterLimiter.release.value = 0.080;
+        masterLimiter.connect(audioCtx.destination);
+
+        masterHarmonyGain = audioCtx.createGain();
+        masterHarmonyGain.gain.value = state.harmonyMuted ? 0 : (state.harmonyVol * HARMONY_BUS_HEADROOM);
+
+        masterMetroGain = audioCtx.createGain();
+        masterMetroGain.gain.value = state.metroMuted ? 0 : ((state.metroMasterVol / 10) * METRO_BUS_HEADROOM);
+
+        // Isolate Metronome clicks above 380Hz so click energy never competes with Harmony fundamentals on phone speakers
+        metroHighPass = audioCtx.createBiquadFilter();
+        metroHighPass.type = "highpass";
+        metroHighPass.frequency.value = 380;
+        metroHighPass.Q.value = 0.707;
+
+        dryNode = audioCtx.createGain();
+        dryNode.gain.value = 0.85;
+
+        wetReverbGain = audioCtx.createGain();
+        wetReverbGain.gain.value = computeReverbWetGain(state.reverbLevel);
+
+        masterHarmonyGain.connect(dryNode);
+        buildAlgorithmicHallReverb(audioCtx, masterHarmonyGain, wetReverbGain);
+
+        dryNode.connect(masterLimiter);
+        wetReverbGain.connect(masterLimiter);
+        masterMetroGain.connect(metroHighPass);
+        metroHighPass.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === "suspended" || audioCtx.state === "interrupted") {
+        audioCtx.resume().catch(() => {});
+      }
+      if (!audioUnlocked && audioCtx) {
+        try {
+          const silentBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+          const src = audioCtx.createBufferSource();
+          src.buffer = silentBuf;
+          src.connect(audioCtx.destination);
+          src.start(0);
+          if (audioCtx.state === "running") {
+            audioUnlocked = true;
+          }
+        } catch (e) {}
+      }
+    }
+
+    function installGlobalAudioUnlocker() {
+      const unlockHandler = () => {
+        ensureAudioContext();
+        if (audioCtx && audioCtx.state === "running") {
+          audioUnlocked = true;
+        }
+      };
+      ["pointerdown", "pointerup", "touchstart", "touchend", "mousedown", "click", "keydown"].forEach(ev => {
+        window.addEventListener(ev, unlockHandler, { capture: true, passive: true });
+      });
+    }
+
+    function getPeriodicWaveForTone(toneObj, freqHz = 440) {
+      if (!audioCtx) return null;
+      // Determine low-register harmonic boost bucket (0 = none, 1..4 = low register C2..B3)
+      // Note: In "Auto" mode, 001: SINE WAVE is kept 100% pure sine so external tuners never get confused by overtones!
+      let boostBucket = 0;
+      const shouldBoostLow = (
+        state.bassBoostMode === "On" ||
+        (state.bassBoostMode === "Auto" && toneObj.id !== "SINE")
+      );
+      if (shouldBoostLow && freqHz < 245) {
+        const lowRatio = Math.min(1.0, Math.max(0.0, (245.0 - freqHz) / 175.0));
+        const deviceScale = (state.bassBoostMode === "On") ? 1.0 : (state.isPhoneMode ? 1.0 : 0.6);
+        boostBucket = Math.round(lowRatio * deviceScale * 4); // 0..4
+      }
+
+      // For pure SINE WAVE with no forced boost, return null so startVoice uses native osc.type = "sine"
+      if (toneObj.id === "SINE" && boostBucket === 0) {
+        return null;
+      }
+
+      const cacheKey = `${toneObj.id}_b${boostBucket}`;
+      if (periodicWaveCache.has(cacheKey)) {
+        return periodicWaveCache.get(cacheKey);
+      }
+      const amps = toneObj.harmonics || [1.0];
+      const len = Math.max(amps.length, boostBucket > 0 ? 4 : amps.length);
+      const real = new Float32Array(len + 1);
+      const imag = new Float32Array(len + 1);
+      for (let i = 0; i < amps.length; i++) {
+        imag[i + 1] = amps[i];
+      }
+      if (boostBucket > 0) {
+        const b = boostBucket / 4.0;
+        imag[2] = (imag[2] || 0) + 0.50 * b; // 2f octave reinforcement
+        imag[3] = (imag[3] || 0) + 0.26 * b; // 3f twelfth reinforcement
+        imag[4] = (imag[4] || 0) + 0.12 * b; // 4f double-octave warmth
+      }
+      const wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
+      periodicWaveCache.set(cacheKey, wave);
+      return wave;
+    }
+
+    function playPanelTouchClick() {
+      if (state.touchSound !== "On" || !state.powerOn) return;
+      ensureAudioContext();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, now);
+      g.gain.setValueAtTime(0.012, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.012);
+      osc.connect(g);
+      g.connect(masterLimiter || audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.015);
+    }
+
+    /*************************************************************************
+     * AUTOMATIC CHORD RECOGNITION & JUST INTONATION PITCH ENGINE
+     *************************************************************************/
+    function getActiveMidiNotesSorted() {
+      if (state.holdEnabled) {
+        return Array.from(state.latchedNotes).sort((a, b) => a - b);
+      }
+      const combined = new Set();
+      for (const n of state.pressedPointers.values()) combined.add(n);
+      for (const n of state.cancelProtectedNotes.values()) combined.add(n);
+      return Array.from(combined).sort((a, b) => a - b);
+    }
+
+    function midiToConcertMidi(midiNote) {
+      return midiNote + (state.octaveShift * 12) + state.transpose;
+    }
+
+    function detectHarmonyAndRoot(concertNotes) {
+      if (!concertNotes || concertNotes.length === 0) {
+        return {
+          rootPc: state.rootMode === "AUTO" ? state.detectedRootPc : parseInt(state.rootMode, 10),
+          chordName: "---",
+          presetToUse: state.scalePreset === "AUTO_PURE" ? "JUST_MAJ" : state.scalePreset,
+          hasNotes: false
+        };
+      }
+
+      const bassMidi = concertNotes[0];
+      const bassPc = ((bassMidi % 12) + 12) % 12;
+      const uniquePcs = Array.from(new Set(concertNotes.map(n => ((n % 12) + 12) % 12)));
+      const manualRoot = state.rootMode !== "AUTO" ? parseInt(state.rootMode, 10) : null;
+
+      if (uniquePcs.length === 1) {
+        const r = manualRoot !== null ? manualRoot : uniquePcs[0];
+        const presetToUse = state.scalePreset === "AUTO_PURE" ? "JUST_MAJ" : state.scalePreset;
+        return {
+          rootPc: r,
+          chordName: getNoteDisplayName(uniquePcs[0], r, presetToUse),
+          presetToUse,
+          hasNotes: true
+        };
+      }
+
+      if (uniquePcs.length === 2) {
+        const otherPc = uniquePcs[0] === bassPc ? uniquePcs[1] : uniquePcs[0];
+        const span = (otherPc - bassPc + 12) % 12;
+        let autoRoot = bassPc;
+        let suffix = "";
+        let autoPreset = "JUST_MAJ";
+
+        if (span === 7) {
+          autoRoot = bassPc;
+          suffix = "5";
+        } else if (span === 5) {
+          autoRoot = otherPc;
+          suffix = " (4度)";
+        } else if (span === 4) {
+          autoRoot = bassPc;
+          suffix = "(M3)";
+        } else if (span === 8) {
+          autoRoot = otherPc;
+          suffix = "/" + NOTE_NAMES_DISPLAY[bassPc];
+        } else if (span === 3) {
+          autoRoot = bassPc;
+          suffix = "m(3)";
+          autoPreset = "JUST_MIN";
+        } else if (span === 9) {
+          autoRoot = bassPc;
+          suffix = "6(2音)";
+        } else if (span === 10) {
+          autoRoot = bassPc;
+          suffix = "7(no3,5)";
+          autoPreset = "JUST_7TH";
+        } else if (span === 11) {
+          autoRoot = bassPc;
+          suffix = "M7(2音)";
+        } else if (span === 2) {
+          autoRoot = bassPc;
+          suffix = "add9(2音)";
+        } else {
+          autoRoot = bassPc;
+          suffix = " (2音)";
+        }
+
+        if (autoPreset === "JUST_7TH" && state.dom7Mode === "WIND") {
+          autoPreset = "JUST_7TH_WIND";
+        }
+        const finalRoot = manualRoot !== null ? manualRoot : autoRoot;
+        const finalPreset = state.scalePreset === "AUTO_PURE" ? autoPreset : state.scalePreset;
+        const fixedSuffix = (span === 8) ? ("/" + getNoteDisplayName(bassPc, finalRoot, finalPreset)) : suffix;
+        return {
+          rootPc: finalRoot,
+          chordName: getNoteDisplayName(autoRoot, finalRoot, finalPreset) + fixedSuffix,
+          presetToUse: finalPreset,
+          hasNotes: true
+        };
+      }
+
+      const CHORD_TEMPLATES = [
+        { suffix: "", intervals: [0, 4, 7], preset: "JUST_MAJ", scoreBoost: 10 },
+        { suffix: "m", intervals: [0, 3, 7], preset: "JUST_MIN", scoreBoost: 10 },
+        { suffix: "7", intervals: [0, 4, 7, 10], preset: "JUST_7TH", scoreBoost: 12 },
+        { suffix: "7", intervals: [0, 4, 10], preset: "JUST_7TH", scoreBoost: 9 },
+        { suffix: "M7", intervals: [0, 4, 7, 11], preset: "JUST_MAJ", scoreBoost: 11 },
+        { suffix: "M7", intervals: [0, 4, 11], preset: "JUST_MAJ", scoreBoost: 8 },
+        { suffix: "m7", intervals: [0, 3, 7, 10], preset: "JUST_MIN", scoreBoost: 11 },
+        { suffix: "m7", intervals: [0, 3, 10], preset: "JUST_MIN", scoreBoost: 9 },
+        { suffix: "6", intervals: [0, 4, 7, 9], preset: "JUST_MAJ", scoreBoost: 10 },
+        { suffix: "m6", intervals: [0, 3, 7, 9], preset: "JUST_MIN", scoreBoost: 10 },
+        { suffix: "mM7", intervals: [0, 3, 7, 11], preset: "JUST_MIN", scoreBoost: 10 },
+        { suffix: "sus4", intervals: [0, 5, 7], preset: "JUST_MAJ", scoreBoost: 9 },
+        { suffix: "sus2", intervals: [0, 2, 7], preset: "JUST_MAJ", scoreBoost: 8 },
+        { suffix: "7sus4", intervals: [0, 5, 7, 10], preset: "JUST_7TH", scoreBoost: 10 },
+        { suffix: "add9", intervals: [0, 2, 4, 7], preset: "JUST_MAJ", scoreBoost: 10 },
+        { suffix: "m(add9)", intervals: [0, 2, 3, 7], preset: "JUST_MIN", scoreBoost: 9 },
+        { suffix: "9", intervals: [0, 2, 4, 7, 10], preset: "JUST_7TH", scoreBoost: 12 },
+        { suffix: "9", intervals: [0, 2, 4, 10], preset: "JUST_7TH", scoreBoost: 9 },
+        { suffix: "M9", intervals: [0, 2, 4, 7, 11], preset: "JUST_MAJ", scoreBoost: 12 },
+        { suffix: "m9", intervals: [0, 2, 3, 7, 10], preset: "JUST_MIN", scoreBoost: 12 },
+        { suffix: "69", intervals: [0, 2, 4, 7, 9], preset: "JUST_MAJ", scoreBoost: 11 },
+        { suffix: "dim", intervals: [0, 3, 6], preset: "JUST_MIN", scoreBoost: 8 },
+        { suffix: "m7-5", intervals: [0, 3, 6, 10], preset: "JUST_MIN", scoreBoost: 10 },
+        { suffix: "dim7", intervals: [0, 3, 6, 9], preset: "JUST_MIN", scoreBoost: 9 },
+        { suffix: "aug", intervals: [0, 4, 8], preset: "JUST_AUG", scoreBoost: 8 }
+      ];
+
+      let bestMatch = null;
+      let bestScore = -999;
+
+      for (let offset = 0; offset < 12; offset++) {
+        const candRoot = (bassPc + offset) % 12;
+        const relSet = new Set(uniquePcs.map(pc => (pc - candRoot + 12) % 12));
+
+        for (const tpl of CHORD_TEMPLATES) {
+          if (relSet.size === tpl.intervals.length && tpl.intervals.every(i => relSet.has(i))) {
+            let score = tpl.scoreBoost;
+            if (candRoot === bassPc) {
+              score += 5;
+            }
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = {
+                rootPc: candRoot,
+                suffix: tpl.suffix,
+                preset: tpl.preset
+              };
+            }
+          }
+        }
+      }
+
+      if (bestMatch) {
+        let matchedPreset = bestMatch.preset;
+        if (matchedPreset === "JUST_7TH" && state.dom7Mode === "WIND") {
+          matchedPreset = "JUST_7TH_WIND";
+        }
+        const finalRoot = manualRoot !== null ? manualRoot : bestMatch.rootPc;
+        const finalPreset = state.scalePreset === "AUTO_PURE" ? matchedPreset : state.scalePreset;
+        const rootDisp = getNoteDisplayName(bestMatch.rootPc, bestMatch.rootPc, finalPreset);
+        const slash = bestMatch.rootPc !== bassPc ? `/${getNoteDisplayName(bassPc, bestMatch.rootPc, finalPreset)}` : "";
+        return {
+          rootPc: finalRoot,
+          chordName: `${rootDisp}${bestMatch.suffix}${slash}`,
+          presetToUse: finalPreset,
+          hasNotes: true
+        };
+      }
+
+      const fallbackRoot = manualRoot !== null ? manualRoot : bassPc;
+      const fallbackPreset = state.scalePreset === "AUTO_PURE" ? "JUST_MAJ" : state.scalePreset;
+      return {
+        rootPc: fallbackRoot,
+        chordName: `${getNoteDisplayName(fallbackRoot, fallbackRoot, fallbackPreset)} (和音)`,
+        presetToUse: fallbackPreset,
+        hasNotes: true
+      };
+    }
+
+    function computeNotePitchData(concertMidi, rootPc, presetToUse) {
+      const etFreq = state.masterTuneHz * Math.pow(2, (concertMidi - 69) / 12);
+      const isPianoGm = getCurrentToneObject().percussive === true;
+      if (state.temperament === "EQUAL" || (isPianoGm && state.pianoTune === "Off")) {
+        return {
+          freqHz: etFreq,
+          centOffset: 0.0,
+          degree: ((concertMidi - rootPc) % 12 + 12) % 12
+        };
+      }
+
+      const degree = ((concertMidi - rootPc) % 12 + 12) % 12;
+      let centOffset = 0.0;
+
+      if (presetToUse.startsWith("USER_")) {
+        const uIdx = parseInt(presetToUse.replace("USER_", ""), 10) - 1;
+        const scaleArr = state.userScales[uIdx] || state.userScales[0];
+        centOffset = scaleArr[degree] || 0.0;
+      } else {
+        const table = JUST_PRESET_CENTS[presetToUse] || JUST_PRESET_CENTS.JUST_MAJ;
+        centOffset = table[degree] || 0.0;
+      }
+
+      const justFreq = etFreq * Math.pow(2, centOffset / 1200);
+      return {
+        freqHz: justFreq,
+        centOffset: centOffset,
+        degree: degree
+      };
+    }
+
+    /*************************************************************************
+     * REAL-TIME VOICE MANAGEMENT (ZERO CRACKLE ON RELEASE TAIL)
+     *************************************************************************/
+    function getCurrentToneObject() {
+      const list = TONE_CATALOG[state.toneCategory] || TONE_CATALOG.WOODWIND;
+      return list[state.toneIndex % list.length] || list[0];
+    }
+
+    function updateAllActiveVoicesAndUI() {
+      const activeMidis = getActiveMidiNotesSorted();
+      const concertMidis = activeMidis.map(m => midiToConcertMidi(m));
+      const detection = detectHarmonyAndRoot(concertMidis);
+
+      if (detection.hasNotes) {
+        state.detectedRootPc = detection.rootPc;
+        state.detectedChordLabel = detection.chordName;
+        state.detectedPresetUsed = detection.presetToUse;
+      } else {
+        if (state.rootMode !== "AUTO") {
+          state.detectedRootPc = parseInt(state.rootMode, 10);
+        }
+        state.detectedChordLabel = "---";
+      }
+
+      const activeSet = new Set(activeMidis);
+
+      for (const [midiNote, voice] of state.activeVoices.entries()) {
+        if (!activeSet.has(midiNote)) {
+          stopVoice(midiNote, voice);
+          state.activeVoices.delete(midiNote);
+        }
+      }
+
+      for (const midiNote of activeMidis) {
+        const concertMidi = midiToConcertMidi(midiNote);
+        const pitchData = computeNotePitchData(concertMidi, state.detectedRootPc, state.detectedPresetUsed);
+
+        if (state.activeVoices.has(midiNote)) {
+          const v = state.activeVoices.get(midiNote);
+          v.pitchData = pitchData;
+          v.concertMidi = concertMidi;
+          if (audioCtx && v.osc && Math.abs((v.lastScheduledFreq || 0) - pitchData.freqHz) > 0.01) {
+            v.lastScheduledFreq = pitchData.freqHz;
+            v.osc.frequency.setTargetAtTime(pitchData.freqHz, audioCtx.currentTime, 0.006);
+          }
+        } else if (state.powerOn) {
+          const newVoice = startVoice(midiNote, concertMidi, pitchData);
+          if (newVoice) {
+            state.activeVoices.set(midiNote, newVoice);
+          }
+        }
+      }
+
+      updateKeyboardHighlights(activeSet);
+      updateLcdAndPanels(activeMidis);
+    }
+
+    // Compute velocity gain & brightness response based on KEY TOUCH (Fix / Light / Medium / Heavy)
+    // Keeps filter cutoff unboosted (<= 1.0) so tapping the bottom of white keys never produces harsh/metallic overtones!
+    function computeKeyTouchResponse(rawVelocity = 0.78) {
+      const v = Math.max(0.15, Math.min(1.0, rawVelocity));
+      if (state.keyTouch === "Fix") {
+        return { gainMul: 1.0, cutoffMul: 1.0 };
+      }
+      if (state.keyTouch === "Light") {
+        const shaped = Math.pow(v, 0.50);
+        return {
+          gainMul: 0.85 + 0.30 * shaped,
+          cutoffMul: 0.95 + 0.05 * shaped
+        };
+      }
+      if (state.keyTouch === "Heavy") {
+        const shaped = Math.pow(v, 1.50);
+        return {
+          gainMul: 0.45 + 0.55 * shaped,
+          cutoffMul: 0.75 + 0.25 * shaped
+        };
+      }
+      // Medium (Standard smooth response with natural warmth)
+      return {
+        gainMul: 0.80 + 0.20 * v,
+        cutoffMul: 1.0
+      };
+    }
+
+    // Compute Low-Register Harmonic Reinforcement (C2~C3) so small phone speakers project fundamental clearly
+    function computeBassBoostMix(freqHz) {
+      if (state.bassBoostMode === "Off" || freqHz >= 255) {
+        return { oct2Gain: 0.0, oct3Gain: 0.0 };
+      }
+      // Smooth ramp below 255Hz (C4=261.6Hz -> 0, C3=130.8Hz -> ~0.67, C2=65.4Hz -> 1.0)
+      const lowFactor = Math.min(1.0, Math.max(0.0, (255.0 - freqHz) / 185.0));
+      const modeScale = (state.bassBoostMode === "On")
+        ? 1.0
+        : (state.isPhoneMode ? 1.0 : 0.65);
+      return {
+        oct2Gain: 0.55 * lowFactor * modeScale, // 2f (octave overtone)
+        oct3Gain: 0.30 * lowFactor * modeScale  // 3f (12th overtone - psychoacoustic missing fundamental reinforcement)
+      };
+    }
+
+    function startVoice(midiNote, concertMidi, pitchData) {
+      ensureAudioContext();
+      if (!audioCtx) return null;
+      if (state.activeVoices.size >= 128) {
+        const oldestKey = state.activeVoices.keys().next().value;
+        if (oldestKey !== undefined) {
+          stopVoice(oldestKey, state.activeVoices.get(oldestKey));
+          state.activeVoices.delete(oldestKey);
+        }
+      }
+
+      const tone = getCurrentToneObject();
+      const now = audioCtx.currentTime;
+      const rawVelocity = state.pointerVelocities.get(midiNote) ?? 0.78;
+      const touchResp = computeKeyTouchResponse(rawVelocity);
+
+      const osc = audioCtx.createOscillator();
+      const wave = getPeriodicWaveForTone(tone, pitchData.freqHz);
+      if (wave) {
+        osc.setPeriodicWave(wave);
+      } else {
+        // Pure native sine wave for 001: SINE WAVE so external smartphone tuners read exact pitch with zero harmonic skew
+        osc.type = "sine";
+      }
+      osc.frequency.value = pitchData.freqHz;
+      osc.frequency.setValueAtTime(pitchData.freqHz, now);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "lowpass";
+      const brillianceFactor = Math.pow(2, state.brillianceMod / 8) * touchResp.cutoffMul;
+      const cutoffHz = Math.min(16000, Math.max(380, (tone.cutoff || 2500) * brillianceFactor));
+      filter.frequency.value = cutoffHz;
+      filter.Q.value = 0.5;
+
+      const envGain = audioCtx.createGain();
+      const targetGain = Math.min(0.22, 0.16 * touchResp.gainMul);
+
+      const isPianoGm = tone.percussive === true;
+      const atkScale = isPianoGm ? 1.0 : Math.pow(1.12, -state.attackMod);
+      const attackTime = Math.max(0.008, (tone.attack || 0.025) * atkScale);
+
+      // Pure setTargetAtTime for 100% C1-continuous envelope
+      envGain.gain.setValueAtTime(0.0, now);
+      envGain.gain.setTargetAtTime(targetGain, now, attackTime / 2.8);
+
+      const decayStart = now + attackTime + 0.03;
+      if (tone.percussive) {
+        envGain.gain.setTargetAtTime(targetGain * 0.30, decayStart, 0.75);
+      }
+
+      osc.connect(filter);
+      filter.connect(envGain);
+      envGain.connect(masterHarmonyGain);
+
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          filter.disconnect();
+          envGain.disconnect();
+        } catch (e) {}
+      };
+
+      osc.start(now);
+
+      return {
+        midiNote,
+        concertMidi,
+        pitchData,
+        lastScheduledFreq: pitchData.freqHz,
+        decayStart: tone.percussive ? decayStart : 0,
+        targetGain,
+        osc,
+        filter,
+        envGain,
+        tone,
+        touchResp
+      };
+    }
+
+    function stopVoice(midiNote, voice) {
+      if (!voice || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const isPianoGm = voice.tone.percussive === true;
+      const relScale = isPianoGm ? 1.0 : Math.pow(1.14, state.releaseMod);
+      const releaseTime = Math.max(0.06, (voice.tone.release || 0.16) * relScale);
+      const tau = releaseTime / 3.0;
+
+      try {
+        const t0 = Math.max(now, voice.decayStart || 0);
+        const stopAt = t0 + (tau * 7.5) + 0.03;
+        voice.envGain.gain.setTargetAtTime(0.0, t0, tau);
+        voice.osc.stop(stopAt);
+      } catch (e) {}
+    }
+
+    function panicAllNotesOff() {
+      state.holdEnabled = false;
+      state.pressedPointers.clear();
+      state.activeStackPointers.clear();
+      state.lastStackToggleTimeByMidi.clear();
+      state.latchedNotes.clear();
+      state.cancelProtectedNotes.clear();
+      for (const [midiNote, voice] of state.activeVoices.entries()) {
+        stopVoice(midiNote, voice);
+      }
+      state.activeVoices.clear();
+      updateAllActiveVoicesAndUI();
+    }
+
+    /*************************************************************************
+     * KEYBOARD INPUT HANDLERS (TABLET 3+ FINGER SIMULTANEOUS CHORD ENGINE)
+     * - Captures both PointerEvents (pointerdown/move/up/cancel) AND TouchEvents
+     *   so iPadOS / Android tablets register all 3+ fingers immediately on contact
+     *   before any tablet 3-finger system gesture recognizer can cancel TouchEvents!
+     *************************************************************************/
+    let cancelClearTimer = null;
+
+    function processPointerDownBatch(entries) {
+      if (!state.powerOn || entries.length === 0) return;
+      ensureAudioContext();
+
+      const nowMs = performance.now();
+      const timeSinceLastTouch = nowMs - state.lastMultiTouchTimestamp;
+
+      // Item 7 Fix: If previous chord notes were held in cancelProtectedNotes by a tablet 3-finger gesture cancel,
+      // clear them immediately when a new touch arrives after a gap (>150ms) or when no physical fingers remain down!
+      if (!state.holdEnabled && state.cancelProtectedNotes.size > 0) {
+        if (state.pressedPointers.size === 0 || timeSinceLastTouch > 150) {
+          state.cancelProtectedNotes.clear();
+        }
+      }
+
+      state.lastMultiTouchTimestamp = nowMs;
+      let anyChanged = false;
+
+      for (const entry of entries) {
+        const { pointerId, midiNote } = entry;
+        const velocity = entry.velocity !== undefined ? entry.velocity : 0.78;
+        if (midiNote === null || midiNote === undefined) continue;
+        // Item 9 Fix: Tap Tempo Key works on C7 (96) AND on the rightmost visible white key in 1.5Oct / 2.5Oct / 4Oct views!
+        if (state.tapKeyMode === "On" && (midiNote === 96 || midiNote === state.currentTapKeyMidi)) {
+          triggerTapTempo();
+          continue;
+        }
+        state.pointerVelocities.set(midiNote, velocity);
+        if (state.holdEnabled) {
+          // Unified 持続 (Hold + Stack):
+          // - Supports both simultaneous multi-key chord presses and 1-by-1 key taps to stack notes
+          // - Tapping an already-sustained key turns that note off individually
+          // - Deduplicates pointerdown + touchstart on touch devices
+          const lastToggleMs = state.lastStackToggleTimeByMidi.get(midiNote) || -9999;
+          const alreadyHeldByStackPtr = Array.from(state.activeStackPointers.values()).includes(midiNote);
+          if ((nowMs - lastToggleMs) < 140 || alreadyHeldByStackPtr) {
+            state.activeStackPointers.set(pointerId, midiNote);
+            continue;
+          }
+          state.lastStackToggleTimeByMidi.set(midiNote, nowMs);
+          state.activeStackPointers.set(pointerId, midiNote);
+          if (state.latchedNotes.has(midiNote)) {
+            state.latchedNotes.delete(midiNote);
+          } else {
+            state.latchedNotes.add(midiNote);
+          }
+          anyChanged = true;
+          continue;
+        }
+        state.pressedPointers.set(pointerId, midiNote);
+        anyChanged = true;
+      }
+
+      if (anyChanged || !state.holdEnabled) {
+        updateAllActiveVoicesAndUI();
+      }
+    }
+
+    function processPointerMoveBatch(entries) {
+      if (!state.powerOn || state.holdEnabled || entries.length === 0) return;
+      let changed = false;
+      for (const { pointerId, midiNote } of entries) {
+        if (!state.pressedPointers.has(pointerId)) continue;
+        const prevMidi = state.pressedPointers.get(pointerId);
+        if (prevMidi === midiNote) continue;
+        if (midiNote === null) {
+          state.pressedPointers.delete(pointerId);
+        } else {
+          state.pressedPointers.set(pointerId, midiNote);
+        }
+        changed = true;
+      }
+      if (changed) {
+        updateAllActiveVoicesAndUI();
+      }
+    }
+
+    function processPointerUpBatch(pointerIds, isCancel = false) {
+      if (pointerIds.length === 0) return;
+      ensureAudioContext();
+
+      // When 持続 (Hold) is active, lifting a finger only clears physical pointer tracking; sustained notes stay latched!
+      if (state.holdEnabled) {
+        for (const pid of pointerIds) {
+          state.activeStackPointers.delete(pid);
+          state.pressedPointers.delete(pid);
+        }
+        return;
+      }
+
+      const nowMs = performance.now();
+
+      // Protect active chord notes if Tablet OS fires pointercancel/touchcancel on 3-finger touch
+      if (isCancel && (state.pressedPointers.size >= 1 || (nowMs - state.lastMultiTouchTimestamp < 750))) {
+        for (const pid of pointerIds) {
+          if (state.pressedPointers.has(pid)) {
+            const n = state.pressedPointers.get(pid);
+            state.cancelProtectedNotes.add(n);
+            state.pressedPointers.delete(pid);
+          }
+        }
+        if (cancelClearTimer) clearTimeout(cancelClearTimer);
+        cancelClearTimer = setTimeout(() => {
+          if (state.pressedPointers.size === 0 && !state.holdEnabled) {
+            state.cancelProtectedNotes.clear();
+            updateAllActiveVoicesAndUI();
+          }
+        }, 320);
+        updateAllActiveVoicesAndUI();
+        return;
+      }
+
+      let changed = false;
+      for (const pid of pointerIds) {
+        if (state.pressedPointers.has(pid)) {
+          state.pressedPointers.delete(pid);
+          changed = true;
+        }
+      }
+      if (state.pressedPointers.size === 0 && !isCancel) {
+        state.cancelProtectedNotes.clear();
+      }
+      if (changed) {
+        updateAllActiveVoicesAndUI();
+      }
+    }
+
+    /*************************************************************************
+     * BUILD 61-KEY KEYBOARD & DYNAMICALLY SHIFT C〇 LABELS ON OCTAVE CHANGE
+     *************************************************************************/
+    const WHITE_KEY_PCS = new Set([0, 2, 4, 5, 7, 9, 11]);
+    const keyElementsByMidi = new Map();
+    let currentWhiteKeyWidth = 42;
+
+    function applyNoteNameStyleTable() {
+      NOTE_NAMES_DISPLAY = (state.noteNameStyle === "FLAT")
+        ? NOTE_NAMES_FLAT_FIXED.slice()
+        : NOTE_NAMES_TUNER.slice();
+      const rootSel = document.getElementById("selectRootMode");
+      if (rootSel) {
+        for (let i = 0; i < 12; i++) {
+          const opt = rootSel.querySelector(`option[value="${i}"]`);
+          if (opt) opt.textContent = NOTE_NAMES_DISPLAY[i];
+        }
+      }
+    }
+
+    function getShiftedKeyNoteLabel(midi) {
+      const pc = ((midi % 12) + 12) % 12;
+      const baseOct = Math.floor(midi / 12) - 1;
+      const shiftedOct = baseOct + state.octaveShift;
+      return NOTE_NAMES_DISPLAY[pc] + (pc === 0 ? shiftedOct : "");
+    }
+
+    function updateTapKeyBadge() {
+      for (const [midi, el] of keyElementsByMidi.entries()) {
+        const isTapTarget = state.tapKeyMode === "On" && (midi === state.currentTapKeyMidi || midi === 96);
+        let tapBadge = el.querySelector(".key-tap-badge");
+        if (isTapTarget) {
+          if (!tapBadge) {
+            const stack = el.querySelector(".key-badge-stack") || el;
+            tapBadge = document.createElement("span");
+            tapBadge.className = "key-tap-badge text-[9px] font-mono font-black bg-[#de5d4e] text-white px-1 py-0.5 rounded-sm mb-0.5 shadow-sm";
+            tapBadge.textContent = "TAP";
+            stack.insertBefore(tapBadge, stack.firstChild);
+          }
+          tapBadge.classList.remove("hidden");
+        } else if (tapBadge) {
+          tapBadge.classList.add("hidden");
+        }
+      }
+    }
+
+    function updateKeyboardOctaveLabels() {
+      for (const [midi, el] of keyElementsByMidi.entries()) {
+        const labelEl = el.querySelector(".key-note-label");
+        if (labelEl) {
+          const nextText = getShiftedKeyNoteLabel(midi);
+          if (labelEl.textContent !== nextText) {
+            labelEl.textContent = nextText;
+          }
+        }
+      }
+      updateTapKeyBadge();
+      const centerOct = 4 + state.octaveShift;
+      const signStr = state.octaveShift >= 0 ? `+${state.octaveShift}` : String(state.octaveShift);
+      const labelOctEl = document.getElementById("labelOctShift");
+      if (labelOctEl) {
+        labelOctEl.textContent = `C${centerOct} (${signStr})`;
+      }
+    }
+
+    function buildKeyboard61() {
+      const stage = document.getElementById("keyboardStage");
+      const wrapper = document.getElementById("keyboardWrapper");
+      if (!stage || !wrapper) return;
+      stage.innerHTML = "";
+      keyElementsByMidi.clear();
+
+      const totalWhite = 36;
+      const rect = wrapper.getBoundingClientRect();
+      const isPortraitRotated = window.innerWidth < window.innerHeight;
+      const wrapperWidth = (isPortraitRotated ? rect.height : rect.width) || Math.max(window.innerWidth, window.innerHeight);
+
+      let visibleWhiteCount = 15;
+      if (state.keyZoom === "mobile") visibleWhiteCount = 10;
+      else if (state.keyZoom === "standard") visibleWhiteCount = 15;
+      else if (state.keyZoom === "wide") visibleWhiteCount = 24;
+      else if (state.keyZoom === "full61") visibleWhiteCount = 36;
+
+      const whiteKeyWidth = Math.max(18, wrapperWidth / visibleWhiteCount);
+      currentWhiteKeyWidth = whiteKeyWidth;
+      const totalStageWidth = Math.round(whiteKeyWidth * totalWhite);
+      stage.style.width = `${totalStageWidth}px`;
+
+      let whiteIndex = 0;
+      const whiteLeftByMidi = new Map();
+
+      for (let m = 36; m <= 96; m++) {
+        const pc = m % 12;
+        if (WHITE_KEY_PCS.has(pc)) {
+          const leftPx = whiteIndex * whiteKeyWidth;
+          whiteLeftByMidi.set(m, leftPx);
+
+          const btn = document.createElement("div");
+          btn.className = "piano-key-white";
+          btn.dataset.midi = String(m);
+          btn.style.left = `${leftPx}px`;
+          btn.style.width = `${whiteKeyWidth}px`;
+
+          const noteLabel = getShiftedKeyNoteLabel(m);
+
+          btn.innerHTML = `
+            <div class="key-badge-stack">
+              <span class="key-role-pill hidden text-[9px] font-mono font-black px-1 py-0.2 rounded-sm mb-0.5"></span>
+              <span class="key-cent-badge text-[10px] font-mono font-extrabold text-[#171715] bg-white/95 px-1 rounded-sm mb-0.5 hidden shadow-sm"></span>
+            </div>
+            <span class="key-note-label text-xs font-extrabold leading-none ${pc === 0 ? 'text-[#de5d4e]' : 'text-[#57554d]'}">${noteLabel}</span>
+          `;
+
+          stage.appendChild(btn);
+          keyElementsByMidi.set(m, btn);
+          whiteIndex++;
+        }
+      }
+
+      const blackWidth = whiteKeyWidth * 0.62;
+      for (let m = 36; m <= 96; m++) {
+        const pc = m % 12;
+        if (!WHITE_KEY_PCS.has(pc)) {
+          const prevWhiteLeft = whiteLeftByMidi.get(m - 1) || 0;
+          const leftPx = prevWhiteLeft + whiteKeyWidth - (blackWidth / 2);
+
+          const btn = document.createElement("div");
+          btn.className = "piano-key-black";
+          btn.dataset.midi = String(m);
+          btn.style.left = `${leftPx}px`;
+          btn.style.width = `${blackWidth}px`;
+
+          btn.innerHTML = `
+            <div class="key-badge-stack">
+              <span class="key-role-pill hidden text-[8px] font-mono font-black px-1 py-0.2 rounded-sm mb-0.5"></span>
+              <span class="key-cent-badge text-[9px] font-mono font-extrabold text-white bg-[#171715]/95 px-0.5 rounded-sm mb-0.5 hidden"></span>
+            </div>
+            <span class="key-note-label text-[10px] font-bold leading-none text-[#a09e94]">${NOTE_NAMES_DISPLAY[pc]}</span>
+          `;
+
+          stage.appendChild(btn);
+          keyElementsByMidi.set(m, btn);
+        }
+      }
+
+      scrollToOctave(state.currentScrollOctave);
+      updateKeyboardOctaveLabels();
+    }
+
+    function scrollToOctave(octNum) {
+      state.currentScrollOctave = octNum;
+      const stage = document.getElementById("keyboardStage");
+      const wrapper = document.getElementById("keyboardWrapper");
+      if (!stage || !wrapper) return;
+
+      let offset = 0;
+      const rect = wrapper.getBoundingClientRect();
+      const isPortraitRotated = window.innerWidth < window.innerHeight;
+      const viewW = (isPortraitRotated ? rect.height : rect.width) || Math.max(window.innerWidth, window.innerHeight);
+
+      if (state.keyZoom === "full61") {
+        stage.style.transform = "translateX(0px)";
+        state.currentTapKeyMidi = 96;
+      } else {
+        const targetMidi = (octNum + 1) * 12;
+        const el = keyElementsByMidi.get(targetMidi);
+        if (el) {
+          const left = parseFloat(el.style.left) || 0;
+          const maxScroll = Math.max(0, parseFloat(stage.style.width) - viewW);
+          offset = Math.min(maxScroll, Math.max(0, left - currentWhiteKeyWidth * 0.5));
+          stage.style.transform = `translateX(${-Math.round(offset)}px)`;
+        }
+        // Determine rightmost visible white key in the current viewport for TAP TEMPO KEY
+        const visibleRightPx = offset + viewW;
+        let rightmostWhiteMidi = 96;
+        for (const [m, keyEl] of keyElementsByMidi.entries()) {
+          if (!WHITE_KEY_PCS.has(m % 12)) continue;
+          const kLeft = parseFloat(keyEl.style.left) || 0;
+          const kRight = kLeft + currentWhiteKeyWidth;
+          if (kLeft >= offset - 4 && kRight <= visibleRightPx + 6) {
+            rightmostWhiteMidi = m;
+          }
+        }
+        state.currentTapKeyMidi = rightmostWhiteMidi;
+      }
+      updateTapKeyBadge();
+    }
+
+    function getMidiFromPoint(clientX, clientY) {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return null;
+      const keyEl = el.closest("[data-midi]");
+      return keyEl ? parseInt(keyEl.dataset.midi, 10) : null;
+    }
+
+    // Compute strike velocity (0.20..1.0) from pointer pressure/force + vertical hit position on keycap
+    function getStrikeVelocityFromPoint(clientX, clientY, rawPressure = 0) {
+      const el = document.elementFromPoint(clientX, clientY);
+      const keyEl = el ? el.closest("[data-midi]") : null;
+      let posVel = 0.78;
+      if (keyEl) {
+        const rect = keyEl.getBoundingClientRect();
+        const isPortraitRotated = window.innerWidth < window.innerHeight;
+        let rel = 0.7;
+        if (!isPortraitRotated && rect.height > 8) {
+          rel = (clientY - rect.top) / rect.height;
+        } else if (isPortraitRotated && rect.width > 8) {
+          rel = 1.0 - ((clientX - rect.left) / rect.width);
+        }
+        rel = Math.max(0.0, Math.min(1.0, rel));
+        posVel = 0.35 + 0.65 * Math.pow(rel, 0.85);
+      }
+      if (rawPressure > 0.05 && Math.abs(rawPressure - 0.5) > 0.02 && rawPressure <= 1.0) {
+        return Math.max(0.20, Math.min(1.0, 0.5 * posVel + 0.5 * rawPressure));
+      }
+      return posVel;
+    }
+
+    function wireKeyboardTouchAndMouse() {
+      const stage = document.getElementById("keyboardStage");
+      const wrapper = document.getElementById("keyboardWrapper");
+      if (wrapper) {
+        wrapper.addEventListener("scroll", () => {
+          if (wrapper.scrollLeft !== 0) wrapper.scrollLeft = 0;
+          if (wrapper.scrollTop !== 0) wrapper.scrollTop = 0;
+        });
+      }
+
+      stage.addEventListener("contextmenu", (e) => e.preventDefault());
+      window.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+      window.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+
+      // 1. PointerEvent Direct Capture (Crucial for iPadOS / Android Tablet 3-finger simultaneous chords!)
+      // pointerdown fires immediately for each finger BEFORE tablet OS 3-finger gesture recognizers delay/cancel touchstart!
+      stage.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        e.preventDefault();
+        ensureAudioContext();
+        try {
+          if (stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
+        } catch (err) {}
+        const midi = getMidiFromPoint(e.clientX, e.clientY);
+        if (midi !== null) {
+          const vel = getStrikeVelocityFromPoint(e.clientX, e.clientY, e.pressure || 0);
+          processPointerDownBatch([{ pointerId: `ptr_${e.pointerId}`, midiNote: midi, velocity: vel }]);
+        }
+      }, { passive: false });
+
+      stage.addEventListener("pointermove", (e) => {
+        const pid = `ptr_${e.pointerId}`;
+        if (!state.pressedPointers.has(pid)) return;
+        e.preventDefault();
+        const midi = getMidiFromPoint(e.clientX, e.clientY);
+        processPointerMoveBatch([{ pointerId: pid, midiNote: midi }]);
+      }, { passive: false });
+
+      stage.addEventListener("pointerup", (e) => {
+        e.preventDefault();
+        processPointerUpBatch([`ptr_${e.pointerId}`], false);
+      }, { passive: false });
+
+      stage.addEventListener("pointercancel", (e) => {
+        e.preventDefault();
+        processPointerUpBatch([`ptr_${e.pointerId}`], true);
+      }, { passive: false });
+
+      // 2. TouchEvent Multi-Touch Reconciliation (Fallback & Supplement for all active touches)
+      // Checks both pressedPointers AND activeStackPointers so touchstart never double-toggles 積重 notes!
+      stage.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        ensureAudioContext();
+        const currentlyHeldNotes = new Set([
+          ...state.pressedPointers.values(),
+          ...state.activeStackPointers.values()
+        ]);
+        const touchList = state.holdEnabled ? e.changedTouches : e.touches;
+        const batch = [];
+        for (let i = 0; i < touchList.length; i++) {
+          const t = touchList[i];
+          const pid = `touch_${t.identifier}`;
+          const midi = getMidiFromPoint(t.clientX, t.clientY);
+          if (
+            midi !== null &&
+            !state.pressedPointers.has(pid) &&
+            !state.activeStackPointers.has(pid) &&
+            !currentlyHeldNotes.has(midi)
+          ) {
+            currentlyHeldNotes.add(midi);
+            const vel = getStrikeVelocityFromPoint(t.clientX, t.clientY, t.force || 0);
+            batch.push({ pointerId: pid, midiNote: midi, velocity: vel });
+          }
+        }
+        if (batch.length > 0) {
+          processPointerDownBatch(batch);
+        }
+      }, { passive: false });
+
+      stage.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        if (state.holdEnabled) return;
+        const batch = [];
+        for (let i = 0; i < e.touches.length; i++) {
+          const t = e.touches[i];
+          const pid = `touch_${t.identifier}`;
+          if (state.pressedPointers.has(pid)) {
+            const midi = getMidiFromPoint(t.clientX, t.clientY);
+            batch.push({ pointerId: pid, midiNote: midi });
+          }
+        }
+        if (batch.length > 0) {
+          processPointerMoveBatch(batch);
+        }
+      }, { passive: false });
+
+      stage.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        ensureAudioContext();
+        const remainingTouchIds = new Set();
+        for (let i = 0; i < e.touches.length; i++) {
+          remainingTouchIds.add(`touch_${e.touches[i].identifier}`);
+        }
+        const ended = [];
+        for (const pid of state.pressedPointers.keys()) {
+          if (pid.startsWith("touch_") && !remainingTouchIds.has(pid)) {
+            ended.push(pid);
+          }
+        }
+        for (const pid of state.activeStackPointers.keys()) {
+          if (pid.startsWith("touch_") && !remainingTouchIds.has(pid)) {
+            ended.push(pid);
+          }
+        }
+        // If all fingers have left the screen, also clear any lingering touch/ptr entries
+        if (e.touches.length === 0) {
+          for (const pid of state.pressedPointers.keys()) {
+            if (pid.startsWith("ptr_") || pid.startsWith("touch_")) {
+              ended.push(pid);
+            }
+          }
+          for (const pid of state.activeStackPointers.keys()) {
+            if (pid.startsWith("ptr_") || pid.startsWith("touch_")) {
+              ended.push(pid);
+            }
+          }
+        }
+        if (ended.length > 0) {
+          processPointerUpBatch(ended, false);
+        }
+      }, { passive: false });
+
+      stage.addEventListener("touchcancel", (e) => {
+        e.preventDefault();
+        const cancelled = [];
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          cancelled.push(`touch_${e.changedTouches[i].identifier}`);
+        }
+        if (cancelled.length > 0) {
+          processPointerUpBatch(cancelled, true);
+        }
+      }, { passive: false });
+
+      // 3. PC Keyboard Support
+      const KEYMAP = {
+        KeyZ: 48, KeyS: 49, KeyX: 50, KeyD: 51, KeyC: 52, KeyV: 53,
+        KeyG: 54, KeyB: 55, KeyH: 56, KeyN: 57, KeyJ: 58, KeyM: 59,
+        KeyQ: 60, Digit2: 61, KeyW: 62, Digit3: 63, KeyE: 64, KeyR: 65,
+        Digit5: 66, KeyT: 67, Digit6: 68, KeyY: 69, Digit7: 70, KeyU: 71, KeyI: 72
+      };
+      window.addEventListener("keydown", (e) => {
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+        if (KEYMAP[e.code]) {
+          e.preventDefault();
+          processPointerDownBatch([{ pointerId: `kb_${e.code}`, midiNote: KEYMAP[e.code] }]);
+        }
+      });
+      const releaseAllPhysical = () => {
+        if (state.holdEnabled) { state.activeStackPointers.clear(); state.pressedPointers.clear(); return; }
+        state.pressedPointers.clear();
+        state.activeStackPointers.clear();
+        state.cancelProtectedNotes.clear();
+        updateAllActiveVoicesAndUI();
+      };
+      window.addEventListener("blur", releaseAllPhysical);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          releaseAllPhysical();
+          if (state.metroPlaying) schedulerLoop();
+        } else if (state.metroPlaying) {
+          schedulerLoop();
+        }
+      });
+      window.addEventListener("keyup", (e) => {
+        if (KEYMAP[e.code]) {
+          e.preventDefault();
+          processPointerUpBatch([`kb_${e.code}`], false);
+        }
+      });
+    }
+
+    const DEGREE_INTERVAL_LABELS = [
+      "主音", "短2", "長2", "短3", "長3", "完全4", "増4/減5", "完全5", "短6", "長6", "短7", "長7"
+    ];
+
+    function updateKeyboardHighlights(activeSet) {
+      for (const [midi, el] of keyElementsByMidi.entries()) {
+        const isPressed = activeSet.has(midi);
+        const concertMidi = midiToConcertMidi(midi);
+        const pc = ((concertMidi % 12) + 12) % 12;
+        const isRoot = isPressed && (pc === state.detectedRootPc);
+
+        el.classList.toggle("pressed", isPressed);
+        el.classList.toggle("is-root", isRoot);
+
+        const badge = el.querySelector(".key-cent-badge");
+        const rolePill = el.querySelector(".key-role-pill");
+
+        if (isPressed && state.activeVoices.has(midi)) {
+          const v = state.activeVoices.get(midi);
+          const c = v.pitchData.centOffset;
+          const sign = c > 0.04 ? "+" : "";
+          if (badge) {
+            badge.textContent = `${sign}${c.toFixed(1)}c`;
+            badge.classList.remove("hidden");
+          }
+          if (rolePill) {
+            const deg = ((pc - state.detectedRootPc) % 12 + 12) % 12;
+            rolePill.textContent = DEGREE_INTERVAL_LABELS[deg] || "";
+            rolePill.classList.remove("hidden");
+          }
+        } else {
+          if (badge) badge.classList.add("hidden");
+          if (rolePill) rolePill.classList.add("hidden");
+        }
+      }
+    }
+
+    /*************************************************************************
+     * 96 TPQN HIGH-PRECISION METRONOME ENGINE
+     *************************************************************************/
+    const TICKS_PER_QUARTER = 96;
+    let metroTimerId = null;
+    let metroWorker = null;
+    const scheduledMetroSources = new Set();
+    let nextTickTime = 0;
+    let currentTickInBar = 0;
+
+    // Inline Web Worker timer so background tabs / screen lock don't throttle setInterval to 1000ms
+    function ensureMetroWorker() {
+      if (metroWorker) return metroWorker;
+      try {
+        const workerCode = `
+          let tid = null;
+          self.onmessage = function(e) {
+            if (e.data === "start") {
+              if (tid) clearInterval(tid);
+              tid = setInterval(() => self.postMessage("tick"), 16);
+            } else if (e.data === "stop") {
+              if (tid) { clearInterval(tid); tid = null; }
+            }
+          };
+        `;
+        const blob = new Blob([workerCode], { type: "application/javascript" });
+        metroWorker = new Worker(URL.createObjectURL(blob));
+        metroWorker.onmessage = () => {
+          if (state.metroPlaying) schedulerLoop();
+        };
+      } catch (e) {
+        metroWorker = null;
+      }
+      return metroWorker;
+    }
+
+    function cancelFutureScheduledMetroClicks() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      for (const item of Array.from(scheduledMetroSources)) {
+        if (item && item.schedTime && item.schedTime > now + 0.025) {
+          try {
+            item.src.stop();
+            item.src.disconnect();
+            item.gain.disconnect();
+          } catch (e) {}
+          scheduledMetroSources.delete(item);
+        }
+      }
+    }
+
+    function getTicksPerMeasure() {
+      return Math.max(6, Math.round(state.beatNum * (384 / state.beatDen)));
+    }
+
+    function getTicksPerBeat() {
+      return Math.max(6, Math.round(384 / state.beatDen));
+    }
+
+    const metroBufferCache = new Map();
+
+    function getMetroClickBuffer(beatSound, subType) {
+      if (!audioCtx) return null;
+      const sr = audioCtx.sampleRate;
+      const cacheKey = `${beatSound}_${subType}_${sr}`;
+      if (metroBufferCache.has(cacheKey)) {
+        return metroBufferCache.get(cacheKey);
+      }
+
+      const freqMap = {
+        accent: 1760.0,
+        quarter: 1174.66,
+        eighth: 880.0,
+        triplet: 987.77,
+        sixteenth: 783.99
+      };
+
+      let baseFreq = freqMap[subType] || 1174.66;
+      let dur = 0.028;
+      let overtoneRatio = 2.0;
+      let overtoneMix = 0.22;
+      let decayTau = 0.0068;
+
+      if (beatSound === "MECH") {
+        baseFreq = subType === "accent" ? 1560.0 : (subType === "quarter" ? 1120.0 : 880.0);
+        dur = 0.022;
+        overtoneRatio = 3.0;
+        overtoneMix = 0.35;
+        decayTau = 0.0048;
+      } else if (beatSound === "WOOD") {
+        baseFreq = subType === "accent" ? 1320.0 : (subType === "quarter" ? 987.77 : 783.99);
+        dur = 0.030;
+        overtoneRatio = 2.42;
+        overtoneMix = 0.18;
+        decayTau = 0.0075;
+      } else if (beatSound === "COWBELL") {
+        baseFreq = subType === "accent" ? 1180.0 : 845.0;
+        dur = 0.038;
+        overtoneRatio = 1.48;
+        overtoneMix = 0.45;
+        decayTau = 0.0105;
+      } else if (beatSound === "BEEP") {
+        baseFreq = subType === "accent" ? 2000.0 : 1000.0;
+        dur = 0.036;
+        overtoneRatio = 2.0;
+        overtoneMix = 0.06;
+        decayTau = 0.0110;
+      } else if (beatSound === "STICK") {
+        baseFreq = subType === "accent" ? 2200.0 : 1480.0;
+        dur = 0.020;
+        overtoneRatio = 2.75;
+        overtoneMix = 0.40;
+        decayTau = 0.0042;
+      }
+
+      const totalSamples = Math.max(64, Math.floor(dur * sr));
+      const buf = audioCtx.createBuffer(1, totalSamples, sr);
+      const data = buf.getChannelData(0);
+
+      // Smooth raised-cosine attack (1.6ms) + exponential decay + smooth end-taper to 0.0
+      // Constant pitch (no downward frequency sweep!) so a low "(トン)" thud never occurs.
+      const attackSamples = Math.max(8, Math.floor(0.0016 * sr));
+      const twoPi = 2 * Math.PI;
+      let phase1 = 0.0;
+      let phase2 = 0.0;
+      const inc1 = (twoPi * baseFreq) / sr;
+      const inc2 = (twoPi * baseFreq * overtoneRatio) / sr;
+      const norm = 1.0 / (1.0 + overtoneMix);
+
+      for (let i = 0; i < totalSamples; i++) {
+        const t = i / sr;
+        let env;
+        if (i < attackSamples) {
+          env = 0.5 * (1.0 - Math.cos((Math.PI * i) / attackSamples));
+        } else {
+          const decayT = (i - attackSamples) / sr;
+          env = Math.exp(-decayT / decayTau);
+        }
+        // Guarantee exact zero at the tail end
+        const tailWindow = 1.0 - Math.pow(i / totalSamples, 3);
+        const wave = (Math.sin(phase1) + overtoneMix * Math.sin(phase2 * 1.0)) * norm;
+        data[i] = wave * env * tailWindow;
+        phase1 += inc1;
+        phase2 += inc2;
+      }
+
+      // 1st-order high-pass filter (~180Hz) to strip any residual sub-bass / DC thump ("トン")
+      const rc = 1.0 / (twoPi * 180.0);
+      const dt = 1.0 / sr;
+      const alpha = rc / (rc + dt);
+      let prevIn = 0.0;
+      let prevOut = 0.0;
+      for (let i = 0; i < totalSamples; i++) {
+        const curIn = data[i];
+        const out = alpha * (prevOut + curIn - prevIn);
+        prevIn = curIn;
+        prevOut = out;
+        // Re-apply end taper on last 16 samples to ensure final sample is 0.0
+        const endFade = i >= totalSamples - 16 ? (totalSamples - 1 - i) / 16 : 1.0;
+        data[i] = out * endFade;
+      }
+
+      metroBufferCache.set(cacheKey, buf);
+      return buf;
+    }
+
+    function startMetronome() {
+      if (!state.powerOn) return;
+      ensureAudioContext();
+      if (state.metroPlaying) return;
+      state.metroPlaying = true;
+      currentTickInBar = 0;
+      nextTickTime = (audioCtx ? audioCtx.currentTime : 0) + 0.06;
+      if (metroTimerId) clearInterval(metroTimerId);
+      const w = ensureMetroWorker();
+      schedulerLoop();
+      if (w) {
+        try { w.postMessage("start"); } catch (e) {}
+      } else {
+        metroTimerId = setInterval(schedulerLoop, 20);
+      }
+      updateMetroUI();
+    }
+
+    function stopMetronome() {
+      state.metroPlaying = false;
+      for (const item of scheduledMetroSources) {
+        try {
+          const s = item.src || item;
+          s.stop();
+          s.disconnect();
+        } catch (e) {}
+      }
+      scheduledMetroSources.clear();
+      try { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); } catch (e) {}
+      if (metroWorker) {
+        try { metroWorker.postMessage("stop"); } catch (e) {}
+      }
+      if (metroTimerId) {
+        clearInterval(metroTimerId);
+        metroTimerId = null;
+      }
+      updateMetroUI();
+    }
+
+    function schedulerLoop() {
+      if (!state.metroPlaying || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      // Only resync if tab was suspended/backgrounded; never shift upcoming beats
+      if (nextTickTime < now - 0.08) {
+        nextTickTime = now + 0.04;
+      }
+      // Expand lookahead window automatically when backgrounded so even throttled timers never drop beats
+      const lookahead = document.hidden ? 1.25 : 0.18;
+      const secondsPerQuarter = 60.0 / Math.max(5, Math.min(300, state.tempo));
+      const secondsPerTick = secondsPerQuarter / TICKS_PER_QUARTER;
+
+      while (nextTickTime < now + lookahead) {
+        scheduleMetronomeTick(currentTickInBar, nextTickTime);
+        nextTickTime += secondsPerTick;
+
+        currentTickInBar++;
+        if (currentTickInBar >= getTicksPerMeasure()) {
+          currentTickInBar = 0;
+        }
+      }
+    }
+
+    function scheduleMetronomeTick(tickInBar, time) {
+      const ticksPerBeat = getTicksPerBeat();
+      const isDownbeat = (tickInBar === 0);
+      const compoundMeter = state.beatDen === 8 && state.beatNum >= 6 && state.beatNum % 3 === 0;
+      const isQuarter = compoundMeter ? (tickInBar % (ticksPerBeat * 3) === 0) : (tickInBar % 96 === 0);
+      const isEighth = (tickInBar % 48 === 0);
+      const isTriplet = (tickInBar % 32 === 0);
+      const isSixteenth = (tickInBar % 24 === 0);
+
+      if (tickInBar % ticksPerBeat === 0) {
+        const beatNumNow = Math.floor(tickInBar / ticksPerBeat);
+        const delayMs = Math.max(0, (time - (audioCtx ? audioCtx.currentTime : 0)) * 1000);
+        setTimeout(() => {
+          if (state.metroPlaying) flashBeatIndicator(beatNumNow);
+        }, delayMs);
+      }
+
+      if (state.metroMuted || state.metroMasterVol === 0) return;
+
+      const vAcc = state.subVol.accent;
+      const vQ = state.subVol.quarter;
+      const vE = state.subVol.eighth;
+      const vS = state.subVol.sixteenth;
+      const vT = state.subVol.triplet;
+
+      const beatIdx = Math.floor(tickInBar / ticksPerBeat);
+
+      // Compound meters (6/8, 9/8, 12/8): the main pulse is the dotted quarter (3 eighths)
+      const compound = state.beatDen === 8 && state.beatNum >= 6 && state.beatNum % 3 === 0;
+      const quarterIdx = compound ? Math.floor(tickInBar / (ticksPerBeat * 3)) : beatIdx;
+
+      if (isDownbeat && vAcc > 0) {
+        triggerMetronomeSound(time, "accent", vAcc / 10, 0);
+        return;
+      }
+      if (state.beatAlternate === "All") {
+        // Layered: every enabled layer that falls on this tick sounds
+        if (isQuarter && vQ > 0) triggerMetronomeSound(time, "quarter", vQ / 10, quarterIdx);
+        if (isEighth && vE > 0) triggerMetronomeSound(time, "eighth", vE / 10, beatIdx);
+        if (isTriplet && vT > 0) triggerMetronomeSound(time, "triplet", vT / 10, beatIdx);
+        if (isSixteenth && vS > 0) triggerMetronomeSound(time, "sixteenth", vS / 10, beatIdx);
+      } else if (isQuarter && vQ > 0) {
+        triggerMetronomeSound(time, "quarter", vQ / 10, quarterIdx);
+      } else if (isEighth && vE > 0) {
+        triggerMetronomeSound(time, "eighth", vE / 10, beatIdx);
+      } else if (isTriplet && vT > 0) {
+        triggerMetronomeSound(time, "triplet", vT / 10, beatIdx);
+      } else if (isSixteenth && vS > 0) {
+        triggerMetronomeSound(time, "sixteenth", vS / 10, beatIdx);
+      }
+    }
+
+    function triggerMetronomeSound(time, subType, level, beatIndex) {
+      if (!audioCtx) return;
+      const schedTime = Math.max(audioCtx.currentTime + 0.001, time);
+
+      if ((state.beatSound === "VOICE_JA" || state.beatSound === "VOICE_EN") && (subType === "accent" || subType === "quarter") && "speechSynthesis" in window) {
+        const delayMs = Math.max(0, (schedTime - audioCtx.currentTime) * 1000);
+        setTimeout(() => {
+          if (!state.metroPlaying) return;
+          const num = (beatIndex >= 0 ? beatIndex : 0) + 1;
+          const u = new SpeechSynthesisUtterance(String(num));
+          u.lang = state.beatSound === "VOICE_JA" ? "ja-JP" : "en-US";
+          u.rate = Math.min(2.5, Math.max(1.1, state.tempo / 90));
+          u.volume = Math.min(1, (state.metroMasterVol / 10) * level);
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        }, delayMs);
+        return; // voice count replaces the click on counted beats
+      }
+
+      const clickBuf = getMetroClickBuffer(state.beatSound, subType);
+      if (!clickBuf) return;
+
+      const src = audioCtx.createBufferSource();
+      src.buffer = clickBuf;
+
+      const gain = audioCtx.createGain();
+      gain.gain.value = Math.max(0.0001, level * 0.82);
+
+      src.connect(gain);
+      gain.connect(masterMetroGain);
+
+      const entry = { src, gain, schedTime };
+      scheduledMetroSources.add(entry);
+      src.onended = () => {
+        scheduledMetroSources.delete(entry);
+        try {
+          src.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
+      src.start(schedTime);
+    }
+
+    function flashBeatIndicator(beatIdx) {
+      // On Smartphone Harmony tab, #metroPane is hidden; skip DOM class mutations on every beat to prevent any GPU/audio jitter!
+      if (state.isPhoneMode && state.phoneTab !== "metro") return;
+      const container = document.getElementById("lcdBeatDots");
+      if (!container) return;
+      const dots = container.children;
+      const count = dots.length;
+      const accentActive = state.subVol.accent > 0;
+      for (let i = 0; i < count; i++) {
+        const isCurrent = (i === (beatIdx % count));
+        dots[i].className = isCurrent
+          ? ((beatIdx === 0 && accentActive)
+              ? "w-2.5 h-2.5 rounded-full bg-[#de5d4e]"
+              : "w-2.5 h-2.5 rounded-full bg-[#f5f4f0]")
+          : "w-2.5 h-2.5 rounded-full bg-[#383832]";
+      }
+    }
+
+    let lastTapTriggerMs = -9999;
+    function triggerTapTempo() {
+      ensureAudioContext();
+      const now = performance.now();
+      // pointerdown + touchstart both reach here on touch devices -> ignore the duplicate (<90ms)
+      if (now - lastTapTriggerMs < 90) return;
+      lastTapTriggerMs = now;
+      state.tapTimestamps = state.tapTimestamps.filter(t => now - t < 2800);
+      state.tapTimestamps.push(now);
+      if (state.tapTimestamps.length >= 2) {
+        let sum = 0;
+        for (let i = 1; i < state.tapTimestamps.length; i++) {
+          sum += (state.tapTimestamps[i] - state.tapTimestamps[i - 1]);
+        }
+        const avgMs = sum / (state.tapTimestamps.length - 1);
+        const bpm = Math.round(60000 / avgMs);
+        setTempo(Math.max(5, Math.min(300, bpm)));
+        showToast(`TAP TEMPO: ♩ = ${state.tempo}`);
+      } else {
+        showToast("TAP: 続けてタップするとテンポを設定します");
+      }
+    }
+
+    /*************************************************************************
+     * UI RENDERING & SYNCHRONIZATION
+     *************************************************************************/
+    function showToast(msg) {
+      const t = document.getElementById("toastNotice");
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.remove("hidden");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.add("hidden"), 1800);
+    }
+
+    function toggleSettingsScreen(forceState) {
+      state.settingsOpen = forceState !== undefined ? forceState : !state.settingsOpen;
+      const mainView = document.getElementById("mainPerformanceView");
+      const settingsView = document.getElementById("panelDetailedSettings");
+      const btnSettings = document.getElementById("btnOpenSettings");
+
+      if (state.settingsOpen) {
+        if (!state.holdEnabled && (state.pressedPointers.size || state.cancelProtectedNotes.size)) {
+          state.pressedPointers.clear(); state.activeStackPointers.clear(); state.cancelProtectedNotes.clear();
+          updateAllActiveVoicesAndUI();
+        }
+        mainView.classList.add("hidden");
+        settingsView.classList.remove("hidden");
+        btnSettings.classList.add("is-active");
+        btnSettings.textContent = "⚙";
+      } else {
+        settingsView.classList.add("hidden");
+        mainView.classList.remove("hidden");
+        btnSettings.classList.remove("is-active");
+        btnSettings.textContent = "⚙";
+        buildKeyboard61();
+        updateKeyboardHighlights(new Set(getActiveMidiNotesSorted()));
+      }
+    }
+
+    function populateStaticSelectors() {
+      const selNum = document.getElementById("selectBeatNum");
+      selNum.innerHTML = "";
+      for (let i = 1; i <= 64; i++) {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = String(i);
+        if (i === state.beatNum) opt.selected = true;
+        selNum.appendChild(opt);
+      }
+
+      const selScale = document.getElementById("selectScalePreset");
+      for (let u = 1; u <= 20; u++) {
+        const opt = document.createElement("option");
+        opt.value = `USER_${u}`;
+        opt.textContent = `User ${u}`;
+        selScale.appendChild(opt);
+      }
+
+      rebuildBeatPatternSelector();
+      rebuildToneVariationSelector();
+      rebuildUserScaleEditorGrid();
+    }
+
+    function rebuildBeatPatternSelector() {
+      const sel = document.getElementById("selectBeatPattern");
+      sel.innerHTML = `<option value="0">--- (マニュアル)</option>`;
+      for (let i = 1; i <= 99; i++) {
+        const pat = state.beatPatterns[i];
+        const label = pat ? pat.name : `${String(i).padStart(2, "0")}: (空スロット)`;
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = label;
+        if (i === state.activePatternSlot) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+
+    function rebuildToneVariationSelector() {
+      const sel = document.getElementById("selectToneVariation");
+      const list = TONE_CATALOG[state.toneCategory] || TONE_CATALOG.WOODWIND;
+      sel.innerHTML = "";
+      list.forEach((t, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx);
+        opt.textContent = t.label;
+        if (idx === state.toneIndex) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    function rebuildUserScaleEditorGrid() {
+      const grid = document.getElementById("userScaleCentGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      const currentArr = state.userScales[state.activeUserScaleIdx] || Array(12).fill(0);
+      NOTE_NAMES_DISPLAY.forEach((nName, idx) => {
+        const box = document.createElement("div");
+        box.className = "bg-[#141412] p-1.5 rounded-sm border border-[#383832] flex items-center justify-between";
+        box.innerHTML = `
+          <span class="font-bold text-[#f5f4f0] w-6">${nName}</span>
+          <input type="number" step="0.1" min="-50" max="50" data-user-note-idx="${idx}" value="${currentArr[idx].toFixed(1)}"
+            class="w-16 bg-[#22221f] border border-[#474740] rounded-sm px-1 py-0.5 text-right font-mono text-xs text-[#f5f4f0]" />
+        `;
+        grid.appendChild(box);
+      });
+
+      grid.querySelectorAll("input[data-user-note-idx]").forEach(inp => {
+        inp.addEventListener("change", (e) => {
+          const noteIdx = parseInt(e.target.dataset.userNoteIdx, 10);
+          let val = parseFloat(e.target.value) || 0;
+          val = Math.max(-50, Math.min(50, val));
+          e.target.value = val.toFixed(1);
+          state.userScales[state.activeUserScaleIdx][noteIdx] = val;
+          saveStorage();
+          updateAllActiveVoicesAndUI();
+        });
+      });
+    }
+
+    function updateLcdAndPanels(activeMidis = getActiveMidiNotesSorted()) {
+      const tone = getCurrentToneObject();
+
+      const lcdTempBadge = document.getElementById("lcdTempBadge");
+      if (state.temperament === "EQUAL") {
+        lcdTempBadge.textContent = "平均律 EQUAL";
+      } else {
+        const presetShort = state.detectedPresetUsed === "JUST_MIN" ? "純正短調"
+          : (state.detectedPresetUsed === "JUST_7TH" ? "属7(-31.2c)"
+          : state.detectedPresetUsed === "JUST_7TH_WIND" ? "属7(-17.6c)"
+          : state.detectedPresetUsed === "JUST_AUG" ? "純正増三和音"
+          : (state.detectedPresetUsed.startsWith("USER_") ? state.detectedPresetUsed : "純正長調"));
+        lcdTempBadge.textContent = `純正律 (${presetShort})`;
+      }
+
+      const transNames = { "0": "C", "-2": "B♭", "3": "E♭", "-9": "E♭(-9)", "-7": "F", "5": "F(+5)" };
+      const tName = transNames[String(state.transpose)] || (state.transpose > 0 ? `+${state.transpose}` : String(state.transpose));
+      document.getElementById("lcdTransposeBadge").textContent = `移調:${tName}`;
+      document.getElementById("badgeTransposeVal").textContent = `${tName} (${state.transpose >= 0 ? '+' + state.transpose : state.transpose})`;
+
+      document.getElementById("lcdOctaveBadge").textContent = `Oct:${state.octaveShift >= 0 ? '+' + state.octaveShift : state.octaveShift}`;
+
+      const holdIcon = document.getElementById("lcdHoldIcon");
+      if (state.holdEnabled) {
+        holdIcon.textContent = "持続";
+        holdIcon.classList.remove("hidden");
+      } else {
+        holdIcon.classList.add("hidden");
+      }
+
+      const pitchEl = document.getElementById("lcdPitchDisplay");
+      const masterCent = 1200 * Math.log2(state.masterTuneHz / 440.0);
+      const sign = masterCent >= 0 ? "+" : "";
+      if (state.pitchDisplayMode === "HZ") {
+        const centHint = Math.abs(masterCent) >= 0.05 ? ` (${sign}${masterCent.toFixed(1)}c)` : "";
+        pitchEl.textContent = `${state.masterTuneHz.toFixed(1)}Hz${centHint}`;
+      } else {
+        pitchEl.textContent = `${sign}${masterCent.toFixed(1)}c (${state.masterTuneHz.toFixed(1)}Hz)`;
+      }
+      document.getElementById("settingsPitchReadout").textContent = `${state.masterTuneHz.toFixed(1)} Hz`;
+      document.getElementById("settingsCentReadout").textContent = `${sign}${masterCent.toFixed(1)} cent (A=440Hz基準)`;
+      document.getElementById("sliderMasterPitch").value = String(state.masterTuneHz);
+
+      document.getElementById("lcdChordName").textContent = state.detectedChordLabel;
+      const rootName = getNoteDisplayName(state.detectedRootPc, state.detectedRootPc, state.detectedPresetUsed) || "C";
+      document.getElementById("lcdRootInfo").textContent =
+        state.rootMode === "AUTO" ? `主音: ${rootName} (自動)` : `主音: ${rootName} (固定)`;
+
+      document.getElementById("lcdToneName").textContent = `${tone.code}: ${tone.name}`;
+      document.getElementById("badgeCurrentTone").textContent = `${tone.code}: ${tone.name}`;
+
+      document.getElementById("headerChordBadge").textContent = state.detectedChordLabel;
+      document.getElementById("headerToneBadge").textContent = tone.name;
+      document.getElementById("headerPitchBadge").textContent = `${state.masterTuneHz.toFixed(1)}Hz`;
+
+      const notesListEl = document.getElementById("lcdNotesList");
+      if (activeMidis.length === 0) {
+        notesListEl.innerHTML = `<span class="inline-block py-0.5 text-xs leading-none text-[#8e8c82]">鍵盤を押すと主音(赤)・構成音(青)の周波数(Hz)と純正律セント補正値(c)を表示</span>`;
+      } else {
+        notesListEl.innerHTML = activeMidis.map(m => {
+          const v = state.activeVoices.get(m);
+          const concertMidi = midiToConcertMidi(m);
+          const pData = v ? v.pitchData : computeNotePitchData(concertMidi, state.detectedRootPc, state.detectedPresetUsed);
+          const pc = ((concertMidi % 12) + 12) % 12;
+          const oct = Math.floor(concertMidi / 12) - 1;
+          const c = pData.centOffset;
+          const cStr = `${c > 0.04 ? '+' : ''}${c.toFixed(1)}c`;
+          const isRoot = (pc === state.detectedRootPc);
+          const noteDisp = getNoteDisplayName(pc);
+          return `<span class="inline-block px-2 py-0.5 rounded-sm leading-none ${isRoot ? 'bg-[#de5d4e] text-white font-extrabold' : 'bg-[#3898ec] text-white font-bold'} font-mono text-xs">
+            ${noteDisp}${oct} ${cStr} (${pData.freqHz.toFixed(1)}Hz)
+          </span>`;
+        }).join("");
+      }
+
+      document.getElementById("btnTempEqual").classList.toggle("is-active", state.temperament === "EQUAL");
+      document.getElementById("btnTempJust").classList.toggle("is-active", state.temperament === "JUST");
+      document.getElementById("btnHold").classList.toggle("is-active", state.holdEnabled);
+
+      document.querySelectorAll(".transpose-preset-btn").forEach(btn => {
+        btn.classList.toggle("is-active", parseInt(btn.dataset.transpose, 10) === state.transpose);
+      });
+
+      document.querySelectorAll(".pitch-quick-btn").forEach(btn => {
+        const hz = parseFloat(btn.dataset.pitchHz);
+        btn.classList.toggle("is-active", Math.abs(hz - state.masterTuneHz) < 0.05);
+      });
+
+      document.querySelectorAll(".tone-cat-btn").forEach(btn => {
+        btn.classList.toggle("is-active", btn.dataset.toneCat === state.toneCategory);
+      });
+    }
+
+    function updateMetroUI() {
+      document.getElementById("lcdTempoVal").textContent = String(state.tempo);
+      document.getElementById("sliderTempo").value = String(state.tempo);
+      document.getElementById("lcdBeatSig").textContent = `${state.beatNum}/${state.beatDen}`;
+      document.getElementById("lcdMetroState").textContent = state.metroPlaying ? "PLAY" : "STOP";
+
+      const headerBpm = document.getElementById("headerBpmBadge");
+      if (headerBpm) headerBpm.textContent = `♩${state.tempo}`;
+
+      // Dynamic ▷ (when stopped) and □ (when playing) across all Metronome buttons!
+      const playStopSymbol = state.metroPlaying ? "□" : "▷";
+
+      const btnPlay = document.getElementById("btnMetroToggle");
+      if (btnPlay) {
+        btnPlay.classList.toggle("is-active", state.metroPlaying);
+        btnPlay.textContent = playStopSymbol;
+      }
+
+      const btnHarmonyMetro = document.getElementById("btnHarmonyMetroToggle");
+      const harmonyMetroIcon = document.getElementById("harmonyMetroIcon");
+      const harmonyMetroBpm = document.getElementById("harmonyMetroBpm");
+      if (btnHarmonyMetro) {
+        btnHarmonyMetro.classList.toggle("is-active", state.metroPlaying);
+      }
+      if (harmonyMetroIcon) {
+        harmonyMetroIcon.textContent = playStopSymbol;
+      }
+      if (harmonyMetroBpm) {
+        harmonyMetroBpm.textContent = `♩${state.tempo}`;
+        harmonyMetroBpm.className = state.metroPlaying
+          ? "font-mono text-xs sm:text-sm text-white font-bold"
+          : "font-mono text-xs sm:text-sm text-[#c7c5bc]";
+      }
+
+      const btnPhoneTabMetro = document.getElementById("btnPhoneTabMetro");
+      if (btnPhoneTabMetro) {
+        btnPhoneTabMetro.textContent = playStopSymbol;
+      }
+
+      const subKeys = [
+        { key: "accent", valId: "valSubAccent", barId: "barSubAccent" },
+        { key: "quarter", valId: "valSubQuarter", barId: "barSubQuarter" },
+        { key: "eighth", valId: "valSubEighth", barId: "barSubEighth" },
+        { key: "sixteenth", valId: "valSubSixteenth", barId: "barSubSixteenth" },
+        { key: "triplet", valId: "valSubTriplet", barId: "barSubTriplet" }
+      ];
+      for (const item of subKeys) {
+        const v = state.subVol[item.key];
+        document.getElementById(item.valId).textContent = String(v);
+        const bar = document.getElementById(item.barId);
+        if (bar) bar.style.height = `${v * 10}%`;
+      }
+
+      document.getElementById("btnToggleBeatAlt").textContent = `重なり: ${state.beatAlternate}`;
+
+      const dotsContainer = document.getElementById("lcdBeatDots");
+      const dotCount = Math.min(12, Math.max(1, state.beatNum));
+      if (dotsContainer.children.length !== dotCount) {
+      dotsContainer.innerHTML = "";
+      for (let i = 0; i < dotCount; i++) {
+        const span = document.createElement("span");
+        span.className = "w-2.5 h-2.5 rounded-full bg-[#383832]";
+        dotsContainer.appendChild(span);
+      }
+      }
+    }
+
+    function setTempo(newBpm) {
+      state.tempo = Math.max(5, Math.min(300, Math.round(newBpm)));
+      if (state.metroPlaying && audioCtx) {
+        cancelFutureScheduledMetroClicks();
+      }
+      updateMetroUI();
+    }
+
+    function setMasterPitchHz(newHz) {
+      state.masterTuneHz = Math.max(415.3, Math.min(466.2, Math.round(newHz * 10) / 10));
+      updateAllActiveVoicesAndUI();
+    }
+
+    /*************************************************************************
+     * LONG-PRESS CONTINUOUS REPEAT HELPER & VERTICAL FADER DRAG
+     *************************************************************************/
+    function attachHoldRepeatButton(btnElement, stepFn, delayMs = 280, intervalMs = 80) {
+      if (!btnElement) return;
+      let timeoutId = null;
+      let intervalId = null;
+      let isHolding = false;
+
+      const clearTimers = () => {
+        isHolding = false;
+        if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+        if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      };
+
+      const startHold = (e) => {
+        if (e.type === "mousedown" && e.button !== 0) return;
+        e.preventDefault();
+        clearTimers();
+        isHolding = true;
+        playPanelTouchClick();
+        stepFn();
+        timeoutId = setTimeout(() => {
+          if (!isHolding) return;
+          intervalId = setInterval(() => {
+            stepFn();
+          }, intervalMs);
+        }, delayMs);
+      };
+
+      btnElement.addEventListener("pointerdown", startHold);
+      btnElement.addEventListener("pointerup", clearTimers);
+      btnElement.addEventListener("pointerleave", clearTimers);
+      btnElement.addEventListener("pointercancel", clearTimers);
+    }
+
+    function wireVerticalFaderDrag() {
+      document.querySelectorAll("[data-fader-ch]").forEach(track => {
+        const k = track.dataset.faderCh;
+        let dragging = false;
+        let moved = false;
+
+        const updateFromPointer = (e) => {
+          const rect = track.getBoundingClientRect();
+          const isPortraitRotated = window.innerWidth < window.innerHeight;
+          let ratio = 0;
+          if (!isPortraitRotated) {
+            ratio = 1 - ((e.clientY - rect.top) / Math.max(1, rect.height));
+          } else {
+            ratio = (e.clientX - rect.left) / Math.max(1, rect.width);
+          }
+          let val = Math.max(0, Math.min(10, Math.round(ratio * 10)));
+          if (state.beatControlMode === "Off") val = ratio >= 0.5 ? 10 : 0;
+          if (state.subVol[k] !== val) {
+            state.subVol[k] = val;
+            updateMetroUI();
+          }
+        };
+
+        track.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          ensureAudioContext();
+          dragging = true;
+          moved = false;
+          track.setPointerCapture(e.pointerId);
+        });
+
+        track.addEventListener("pointermove", (e) => {
+          if (!dragging) return;
+          moved = true;
+          updateFromPointer(e);
+        });
+
+        track.addEventListener("pointerup", (e) => {
+          if (!dragging) return;
+          dragging = false;
+          if (!moved) {
+            playPanelTouchClick();
+            state.subVol[k] = state.subVol[k] > 0 ? 0 : 10;
+            updateMetroUI();
+          }
+        });
+
+        track.addEventListener("pointercancel", () => {
+          dragging = false;
+        });
+      });
+    }
+
+    /*************************************************************************
+     * WIRE ALL HARDWARE BUTTONS & CONTROLS
+     *************************************************************************/
+    function wireAllControls() {
+      document.getElementById("btnPower").addEventListener("click", () => {
+        state.powerOn = !state.powerOn;
+        const dot = document.getElementById("powerDot");
+        if (!state.powerOn) {
+          panicAllNotesOff();
+          stopMetronome();
+          dot.className = "w-2.5 h-2.5 rounded-full bg-[#57554d]";
+          showToast("電源 OFF");
+        } else {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-[#de5d4e]";
+          showToast(`GB-100 ${APP_VERSION} 起動`);
+        }
+      });
+
+      // Smartphone Tab Switcher ([🎹] / [▷ or □])
+      document.querySelectorAll(".phone-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          state.phoneTab = btn.dataset.phoneTab;
+          if (state.settingsOpen) toggleSettingsScreen(false);
+          applyPhoneTabVisibility();
+          if (state.phoneTab === "harmony") {
+            buildKeyboard61();
+            updateKeyboardHighlights(new Set(getActiveMidiNotesSorted()));
+          }
+        });
+      });
+
+      // Settings Toggles
+      document.getElementById("btnOpenSettings").addEventListener("click", () => {
+        playPanelTouchClick();
+        toggleSettingsScreen();
+      });
+      document.getElementById("btnCloseSettings").addEventListener("click", () => {
+        playPanelTouchClick();
+        toggleSettingsScreen(false);
+      });
+
+      // Harmony & Metronome Independent Volumes
+      const syncHarmonyVol = (valInt) => {
+        ensureAudioContext();
+        state.harmonyVol = valInt / 100;
+        state.harmonyMuted = false;
+        document.getElementById("sliderHarmonyVol").value = String(valInt);
+        document.getElementById("labelHarmonyVol").textContent = `${valInt}%`;
+        if (masterHarmonyGain && audioCtx) {
+          masterHarmonyGain.gain.setTargetAtTime(state.harmonyVol * HARMONY_BUS_HEADROOM, audioCtx.currentTime, 0.01);
+        }
+      };
+      document.getElementById("sliderHarmonyVol").addEventListener("input", (e) => syncHarmonyVol(parseInt(e.target.value, 10)));
+
+      document.getElementById("btnMuteHarmony").addEventListener("click", () => {
+        ensureAudioContext();
+        state.harmonyMuted = !state.harmonyMuted;
+        document.getElementById("labelHarmonyVol").textContent = state.harmonyMuted ? "MUTE" : `${Math.round(state.harmonyVol * 100)}%`;
+        if (masterHarmonyGain && audioCtx) {
+          masterHarmonyGain.gain.setTargetAtTime(state.harmonyMuted ? 0 : (state.harmonyVol * HARMONY_BUS_HEADROOM), audioCtx.currentTime, 0.01);
+        }
+      });
+
+      const syncMetroVol = (valInt) => {
+        ensureAudioContext();
+        state.metroMasterVol = valInt;
+        state.metroMuted = false;
+        document.getElementById("sliderMetroVol").value = String(valInt);
+        document.getElementById("labelMetroVol").textContent = `${valInt}`;
+        if (masterMetroGain && audioCtx) {
+          masterMetroGain.gain.setTargetAtTime((state.metroMasterVol / 10) * METRO_BUS_HEADROOM, audioCtx.currentTime, 0.01);
+        }
+      };
+      document.getElementById("sliderMetroVol").addEventListener("input", (e) => syncMetroVol(parseInt(e.target.value, 10)));
+
+      document.getElementById("btnMuteMetro").addEventListener("click", () => {
+        ensureAudioContext();
+        state.metroMuted = !state.metroMuted;
+        document.getElementById("labelMetroVol").textContent = state.metroMuted ? "M" : `${state.metroMasterVol}`;
+        if (masterMetroGain && audioCtx) {
+          masterMetroGain.gain.setTargetAtTime(state.metroMuted ? 0 : ((state.metroMasterVol / 10) * METRO_BUS_HEADROOM), audioCtx.currentTime, 0.01);
+        }
+      });
+
+      // Transpose Controls
+      document.querySelectorAll(".transpose-preset-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          state.transpose = parseInt(btn.dataset.transpose, 10);
+          updateAllActiveVoicesAndUI();
+        });
+      });
+
+      document.getElementById("btnTransDown").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.transpose = Math.max(-12, state.transpose - 1);
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("btnTransUp").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.transpose = Math.min(12, state.transpose + 1);
+        updateAllActiveVoicesAndUI();
+      });
+
+      // Master Pitch Controls
+      document.querySelectorAll(".pitch-quick-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          setMasterPitchHz(parseFloat(btn.dataset.pitchHz));
+        });
+      });
+
+      attachHoldRepeatButton(document.getElementById("btnPitchDown"), () => setMasterPitchHz(state.masterTuneHz - 0.1));
+      attachHoldRepeatButton(document.getElementById("btnPitchUp"), () => setMasterPitchHz(state.masterTuneHz + 0.1));
+
+      document.getElementById("sliderMasterPitch").addEventListener("input", (e) => {
+        setMasterPitchHz(parseFloat(e.target.value));
+      });
+
+      document.getElementById("btnToggleHzCent").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.pitchDisplayMode = state.pitchDisplayMode === "HZ" ? "CENT" : "HZ";
+        updateLcdAndPanels();
+      });
+
+      // Tone Category & Variation Controls
+      document.querySelectorAll(".tone-cat-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          const cat = btn.dataset.toneCat;
+          if (state.toneCategory === cat) {
+            const list = TONE_CATALOG[cat];
+            state.toneIndex = (state.toneIndex + 1) % list.length;
+          } else {
+            state.toneCategory = cat;
+            state.toneIndex = 0;
+          }
+          rebuildToneVariationSelector();
+          refreshActiveVoicesTone();
+          updateAllActiveVoicesAndUI();
+        });
+      });
+
+      document.getElementById("selectToneVariation").addEventListener("change", (e) => {
+        state.toneIndex = parseInt(e.target.value, 10) || 0;
+        refreshActiveVoicesTone();
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("btnTonePrev").addEventListener("click", () => {
+        playPanelTouchClick();
+        const list = TONE_CATALOG[state.toneCategory];
+        state.toneIndex = (state.toneIndex - 1 + list.length) % list.length;
+        rebuildToneVariationSelector();
+        refreshActiveVoicesTone();
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("btnToneNext").addEventListener("click", () => {
+        playPanelTouchClick();
+        const list = TONE_CATALOG[state.toneCategory];
+        state.toneIndex = (state.toneIndex + 1) % list.length;
+        rebuildToneVariationSelector();
+        refreshActiveVoicesTone();
+        updateAllActiveVoicesAndUI();
+      });
+
+      // Temperament Controls
+      document.getElementById("btnTempEqual").addEventListener("click", () => {
+        playPanelTouchClick();
+        if (state.temperament === "EQUAL") {
+          state.pitchDisplayMode = state.pitchDisplayMode === "HZ" ? "CENT" : "HZ";
+        } else {
+          state.temperament = "EQUAL";
+        }
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("btnTempJust").addEventListener("click", () => {
+        playPanelTouchClick();
+        if (state.temperament === "JUST") {
+          state.pitchDisplayMode = state.pitchDisplayMode === "HZ" ? "CENT" : "HZ";
+        } else {
+          state.temperament = "JUST";
+        }
+        updateAllActiveVoicesAndUI();
+      });
+
+      // UNIFIED 持続 (Hold & Stack):
+      // - Latches currently held keys when turned ON
+      // - Allows pressing keys simultaneously OR tapping 1-by-1 to stack notes into a chord
+      // - Tapping an already-sounding key toggles just that note OFF
+      document.getElementById("btnHold").addEventListener("click", () => {
+        ensureAudioContext();
+        playPanelTouchClick();
+        state.holdEnabled = !state.holdEnabled;
+        state.activeStackPointers.clear();
+        state.lastStackToggleTimeByMidi.clear();
+        if (state.holdEnabled) {
+          for (const n of state.pressedPointers.values()) state.latchedNotes.add(n);
+          for (const n of state.cancelProtectedNotes.values()) state.latchedNotes.add(n);
+          state.pressedPointers.clear();
+          state.cancelProtectedNotes.clear();
+        } else {
+          state.latchedNotes.clear();
+          state.cancelProtectedNotes.clear();
+        }
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("selectRootMode").addEventListener("change", (e) => {
+        state.rootMode = e.target.value;
+        updateAllActiveVoicesAndUI();
+      });
+
+      const noteNameSel = document.getElementById("selectNoteNameStyle");
+      if (noteNameSel) {
+        noteNameSel.addEventListener("change", (e) => {
+          state.noteNameStyle = e.target.value;
+          applyNoteNameStyleTable();
+          rebuildUserScaleEditorGrid();
+          updateKeyboardOctaveLabels();
+          updateAllActiveVoicesAndUI();
+        });
+      }
+
+      document.getElementById("selectScalePreset").addEventListener("change", (e) => {
+        state.scalePreset = e.target.value;
+        if (state.scalePreset === "JUST_7TH") state.dom7Mode = "SEPTIMAL";
+        else if (state.scalePreset === "JUST_7TH_WIND") state.dom7Mode = "WIND";
+        const dom7Sel = document.getElementById("selectDom7Mode");
+        if (dom7Sel) dom7Sel.value = state.dom7Mode;
+        if (state.scalePreset.startsWith("USER_")) {
+          state.activeUserScaleIdx = parseInt(state.scalePreset.replace("USER_", ""), 10) - 1;
+          rebuildUserScaleEditorGrid();
+        }
+        updateAllActiveVoicesAndUI();
+      });
+
+      const dom7SelEl = document.getElementById("selectDom7Mode");
+      if (dom7SelEl) {
+        dom7SelEl.addEventListener("change", (e) => {
+          state.dom7Mode = e.target.value;
+          if (state.scalePreset === "JUST_7TH" && state.dom7Mode === "WIND") {
+            state.scalePreset = "JUST_7TH_WIND";
+            document.getElementById("selectScalePreset").value = "JUST_7TH_WIND";
+          } else if (state.scalePreset === "JUST_7TH_WIND" && state.dom7Mode === "SEPTIMAL") {
+            state.scalePreset = "JUST_7TH";
+            document.getElementById("selectScalePreset").value = "JUST_7TH";
+          }
+          updateAllActiveVoicesAndUI();
+        });
+      }
+
+      // Centered Octave Shift Keys (◀OCT / OCT▶): Updates octaveShift AND shifts C〇 labels on the keyboard!
+      document.getElementById("btnOctDown").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.octaveShift = Math.max(-3, state.octaveShift - 1);
+        updateKeyboardOctaveLabels();
+        updateAllActiveVoicesAndUI();
+      });
+      document.getElementById("btnOctUp").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.octaveShift = Math.min(3, state.octaveShift + 1);
+        updateKeyboardOctaveLabels();
+        updateAllActiveVoicesAndUI();
+      });
+
+      document.getElementById("btnAllNotesOff").addEventListener("click", () => {
+        playPanelTouchClick();
+        panicAllNotesOff();
+      });
+
+      document.querySelectorAll(".quick-chord-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          const type = btn.dataset.quickChord;
+          const targetConcertRootPc = state.rootMode !== "AUTO" ? parseInt(state.rootMode, 10) : state.detectedRootPc;
+          const writtenRootPc = ((targetConcertRootPc - state.transpose) % 12 + 12) % 12;
+          const rootMidi = 60 + writtenRootPc;
+          const map = {
+            maj: [0, 4, 7, 12],
+            min: [0, 3, 7, 12],
+            dom7: [0, 4, 7, 10],
+            min7: [0, 3, 7, 10],
+            maj7: [0, 4, 7, 11]
+          };
+          const intervals = map[type] || [0, 4, 7];
+          state.holdEnabled = true;
+          state.latchedNotes.clear();
+          intervals.forEach(iv => state.latchedNotes.add(rootMidi + iv));
+          updateAllActiveVoicesAndUI();
+        });
+      });
+
+      // Metronome Transport (Both on Metronome Pane AND inline on Harmony Pane!)
+      const toggleMetroPlayStop = () => {
+        playPanelTouchClick();
+        if (state.metroPlaying) stopMetronome();
+        else startMetronome();
+      };
+      document.getElementById("btnMetroToggle").addEventListener("click", toggleMetroPlayStop);
+      document.getElementById("btnHarmonyMetroToggle").addEventListener("click", toggleMetroPlayStop);
+
+      document.getElementById("btnTapTempo").addEventListener("click", () => {
+        triggerTapTempo();
+      });
+
+      attachHoldRepeatButton(document.getElementById("btnTempoSlower"), () => setTempo(state.tempo - 1));
+      attachHoldRepeatButton(document.getElementById("btnTempoFaster"), () => setTempo(state.tempo + 1));
+      attachHoldRepeatButton(document.getElementById("btnTempoMinus5"), () => setTempo(state.tempo - 5), 280, 100);
+      attachHoldRepeatButton(document.getElementById("btnTempoPlus5"), () => setTempo(state.tempo + 5), 280, 100);
+
+      document.getElementById("sliderTempo").addEventListener("input", (e) => {
+        setTempo(parseInt(e.target.value, 10));
+      });
+
+      document.getElementById("selectBeatNum").addEventListener("change", (e) => {
+        state.beatNum = parseInt(e.target.value, 10) || 4;
+        state.activePatternSlot = 0;
+        document.getElementById("selectBeatPattern").value = "0";
+        currentTickInBar = 0;
+        updateMetroUI();
+      });
+
+      document.getElementById("selectBeatDen").addEventListener("change", (e) => {
+        state.beatDen = parseInt(e.target.value, 10) || 4;
+        state.activePatternSlot = 0;
+        document.getElementById("selectBeatPattern").value = "0";
+        currentTickInBar = 0;
+        updateMetroUI();
+      });
+
+      document.getElementById("selectBeatSound").addEventListener("change", (e) => {
+        state.beatSound = e.target.value;
+      });
+
+      document.getElementById("selectBeatPattern").addEventListener("change", (e) => {
+        const slot = parseInt(e.target.value, 10) || 0;
+        state.activePatternSlot = slot;
+        if (slot > 0 && state.beatPatterns[slot]) {
+          const pat = state.beatPatterns[slot];
+          state.beatNum = pat.num;
+          state.beatDen = pat.den;
+          state.tempo = pat.tempo;
+          state.subVol = { ...pat.sub };
+          document.getElementById("selectBeatNum").value = String(state.beatNum);
+          document.getElementById("selectBeatDen").value = String(state.beatDen);
+          updateMetroUI();
+          showToast(`パターン呼出: ${pat.name}`);
+        }
+      });
+
+      document.getElementById("btnToggleBeatAlt").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.beatAlternate = state.beatAlternate === "All" ? "Alternate" : "All";
+        updateMetroUI();
+      });
+
+      document.querySelectorAll("[data-sub-up]").forEach(btn => {
+        const k = btn.dataset.subUp;
+        attachHoldRepeatButton(btn, () => {
+          if (state.beatControlMode === "Off") {
+            state.subVol[k] = 10;
+          } else {
+            state.subVol[k] = Math.min(10, state.subVol[k] + 1);
+          }
+          updateMetroUI();
+        }, 260, 80);
+      });
+
+      document.querySelectorAll("[data-sub-down]").forEach(btn => {
+        const k = btn.dataset.subDown;
+        attachHoldRepeatButton(btn, () => {
+          if (state.beatControlMode === "Off") {
+            state.subVol[k] = 0;
+          } else {
+            state.subVol[k] = Math.max(0, state.subVol[k] - 1);
+          }
+          updateMetroUI();
+        }, 260, 80);
+      });
+
+      wireVerticalFaderDrag();
+
+      // Detailed Settings Controls
+      document.getElementById("selectKeyTouch").addEventListener("change", (e) => {
+        state.keyTouch = e.target.value;
+        refreshActiveVoicesTone();
+      });
+      document.getElementById("sliderReverb").addEventListener("input", (e) => {
+        state.reverbLevel = parseInt(e.target.value, 10);
+        document.getElementById("labelReverb").textContent = String(state.reverbLevel);
+        if (wetReverbGain && audioCtx) {
+          wetReverbGain.gain.setTargetAtTime(computeReverbWetGain(state.reverbLevel), audioCtx.currentTime, 0.02);
+        }
+      });
+      document.getElementById("sliderAttack").addEventListener("input", (e) => {
+        state.attackMod = parseInt(e.target.value, 10);
+        document.getElementById("labelAttack").textContent = String(state.attackMod);
+      });
+      document.getElementById("sliderRelease").addEventListener("input", (e) => {
+        state.releaseMod = parseInt(e.target.value, 10);
+        document.getElementById("labelRelease").textContent = String(state.releaseMod);
+      });
+      document.getElementById("sliderBrilliance").addEventListener("input", (e) => {
+        state.brillianceMod = parseInt(e.target.value, 10);
+        document.getElementById("labelBrilliance").textContent = String(state.brillianceMod);
+        // live-update the filters instead of re-triggering every held note
+        if (audioCtx) {
+          const bf = Math.pow(2, state.brillianceMod / 8);
+          for (const v of state.activeVoices.values()) {
+            const hz = Math.min(16000, Math.max(300, (v.tone.cutoff || 2500) * bf));
+            v.filter.frequency.setTargetAtTime(hz, audioCtx.currentTime, 0.02);
+          }
+        }
+      });
+      document.getElementById("selectPianoTune").addEventListener("change", (e) => {
+        state.pianoTune = e.target.value;
+        updateAllActiveVoicesAndUI();
+      });
+      const selBassBoost = document.getElementById("selectBassBoost");
+      if (selBassBoost) {
+        selBassBoost.addEventListener("change", (e) => {
+          state.bassBoostMode = e.target.value;
+          refreshActiveVoicesTone();
+        });
+      }
+      document.getElementById("selectBeatControlMode").addEventListener("change", (e) => {
+        state.beatControlMode = e.target.value;
+      });
+      document.getElementById("selectTapKeyMode").addEventListener("change", (e) => {
+        state.tapKeyMode = e.target.value;
+        updateTapKeyBadge();
+        const tapKeyName = getShiftedKeyNoteLabel(state.currentTapKeyMidi);
+        showToast(state.tapKeyMode === "On" ? `表示右端の白鍵 (${tapKeyName}) をタップテンポに設定しました` : "右端白鍵を通常演奏に戻しました");
+      });
+      document.getElementById("selectTouchSound").addEventListener("change", (e) => {
+        state.touchSound = e.target.value;
+      });
+      document.getElementById("sliderLcdContrast").addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        state.lcdContrast = val;
+        const rootEl = document.getElementById("appLandscapeRoot");
+        if (rootEl) {
+          if (val === 5) {
+            rootEl.style.filter = "none";
+          } else {
+            const c = 0.8 + (val / 10) * 0.40;
+            rootEl.style.filter = `contrast(${c.toFixed(2)})`;
+          }
+        }
+      });
+
+      document.getElementById("btnResetUserTune").addEventListener("click", () => {
+        playPanelTouchClick();
+        state.userScales[state.activeUserScaleIdx] = Array(12).fill(0.0);
+        saveStorage();
+        rebuildUserScaleEditorGrid();
+        updateAllActiveVoicesAndUI();
+        showToast(`User ${state.activeUserScaleIdx + 1} の調律を初期化しました`);
+      });
+
+      document.getElementById("btnSaveBeatPattern").addEventListener("click", () => {
+        playPanelTouchClick();
+        let targetSlot = state.activePatternSlot;
+      if (!(targetSlot > 0)) {
+        targetSlot = 0;
+        for (let i = 11; i <= 99; i++) { if (!state.beatPatterns[i]) { targetSlot = i; break; } }
+        if (!targetSlot) targetSlot = 99;
+      }
+        const name = `${String(targetSlot).padStart(2, "0")}: ${state.beatNum}/${state.beatDen} ♩=${state.tempo}`;
+        state.beatPatterns[targetSlot] = {
+          name,
+          num: state.beatNum,
+          den: state.beatDen,
+          tempo: state.tempo,
+          sub: { ...state.subVol }
+        };
+        state.activePatternSlot = targetSlot;
+        saveStorage();
+        rebuildBeatPatternSelector();
+        showToast(`ビートパターン ${name} を保存しました`);
+      });
+
+      document.getElementById("btnDeleteBeatPattern").addEventListener("click", () => {
+        playPanelTouchClick();
+        if (state.activePatternSlot > 0) {
+          const delSlot = state.activePatternSlot;
+          delete state.beatPatterns[delSlot];
+          state.activePatternSlot = 0;
+          saveStorage();
+          rebuildBeatPatternSelector();
+          showToast(`パターン ${delSlot} を削除しました`);
+        }
+      });
+
+      document.getElementById("btnFactoryReset").addEventListener("click", () => {
+        playPanelTouchClick();
+        panicAllNotesOff();
+        stopMetronome();
+        state.masterTuneHz = 442.0;
+        state.transpose = 0;
+        state.octaveShift = 0;
+        state.temperament = "EQUAL";
+        state.scalePreset = "AUTO_PURE";
+        state.rootMode = "AUTO";
+        state.toneCategory = "WOODWIND";
+        state.toneIndex = 0;
+        state.tempo = 120;
+        state.beatNum = 4;
+        state.beatDen = 4;
+        state.subVol = { accent: 10, quarter: 10, eighth: 0, sixteenth: 0, triplet: 0 };
+        Object.assign(state, { keyTouch: "Medium", reverbLevel: 3, attackMod: 0, releaseMod: 0, brillianceMod: 0,
+          pianoTune: "On", dom7Mode: "SEPTIMAL", noteNameStyle: "TUNER", bassBoostMode: "Off", beatSound: "CLICK", beatAlternate: "Alternate", beatControlMode: "On",
+          tapKeyMode: "Off", touchSound: "On", activePatternSlot: 0, pitchDisplayMode: "HZ" });
+        applyNoteNameStyleTable();
+        rebuildUserScaleEditorGrid();
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = String(v); };
+        setVal("selectRootMode", "AUTO"); setVal("selectNoteNameStyle", "TUNER"); setVal("selectScalePreset", "AUTO_PURE"); setVal("selectDom7Mode", "SEPTIMAL");
+        setVal("selectBeatNum", 4); setVal("selectBeatDen", 4); setVal("selectBeatPattern", 0);
+        setVal("selectKeyTouch", "Medium"); setVal("selectPianoTune", "On"); setVal("selectBassBoost", "Off"); setVal("selectBeatSound", "CLICK");
+        setVal("selectBeatControlMode", "On"); setVal("selectTapKeyMode", "Off"); setVal("selectTouchSound", "On");
+        [["sliderReverb","labelReverb",3],["sliderAttack","labelAttack",0],["sliderRelease","labelRelease",0],["sliderBrilliance","labelBrilliance",0]].forEach(([a,b,v]) => {
+          setVal(a, v); document.getElementById(b).textContent = String(v);
+        });
+        if (wetReverbGain && audioCtx) wetReverbGain.gain.setTargetAtTime(computeReverbWetGain(3), audioCtx.currentTime, 0.02);
+        rebuildToneVariationSelector();
+        updateKeyboardOctaveLabels();
+        updateAllActiveVoicesAndUI();
+        updateMetroUI();
+        showToast("FACTORY RESET 完了 (初期値 442.0Hz / 平均律)");
+      });
+
+      document.querySelectorAll(".key-zoom-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          playPanelTouchClick();
+          state.keyZoom = btn.dataset.keyZoom;
+          document.querySelectorAll(".key-zoom-btn").forEach(b => {
+            b.classList.toggle("is-active", b.dataset.keyZoom === state.keyZoom);
+          });
+          buildKeyboard61();
+          updateKeyboardHighlights(new Set(getActiveMidiNotesSorted()));
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        evaluateDeviceLayoutMode();
+        if (!state.settingsOpen) {
+          buildKeyboard61();
+          updateKeyboardHighlights(new Set(getActiveMidiNotesSorted()));
+        }
+      });
+    }
+
+    function refreshActiveVoicesTone() {
+      const currentNotes = getActiveMidiNotesSorted();
+      for (const [m, v] of state.activeVoices.entries()) {
+        stopVoice(m, v);
+      }
+      state.activeVoices.clear();
+      if (currentNotes.length > 0) {
+        updateAllActiveVoicesAndUI();
+      }
+    }
+
+    function initWebMIDI() {
+      if (!navigator.requestMIDIAccess) return;
+      navigator.requestMIDIAccess().then((midiAccess) => {
+        midiAccess.onstatechange = () => bindMidiInputs(midiAccess);
+        bindMidiInputs(midiAccess);
+      }).catch(() => {});
+    }
+    function bindMidiInputs(midiAccess) {
+      {
+        for (const input of midiAccess.inputs.values()) {
+          input.onmidimessage = (msg) => {
+            const [status, data1, data2] = msg.data;
+            const cmd = status & 0xf0;
+            if (cmd === 0x90 && data2 > 0) {
+              processPointerDownBatch([{ pointerId: `midi_${data1}`, midiNote: data1, velocity: Math.max(0.1, data2 / 127) }]);
+            } else if (cmd === 0x80 || (cmd === 0x90 && data2 === 0)) {
+              processPointerUpBatch([`midi_${data1}`], false);
+            }
+          };
+        }
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      installGlobalAudioUnlocker();
+      loadSavedStorage();
+      evaluateDeviceLayoutMode();
+      populateStaticSelectors();
+      buildKeyboard61();
+      wireKeyboardTouchAndMouse();
+      wireAllControls();
+      initWebMIDI();
+      updateAllActiveVoicesAndUI();
+      updateMetroUI();
+      setTimeout(() => {
+        evaluateDeviceLayoutMode();
+        buildKeyboard61();
+        scrollToOctave(4);
+      }, 60);
+    });
+  </script>
+</body>
+</html>
